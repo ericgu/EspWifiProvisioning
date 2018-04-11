@@ -13,6 +13,7 @@
 #include <ESP8266WebServer.h>
 
 #include "esp8266TrueRandom.h"
+#include "PersistentStorage.h"
 
 #define STATE_UNKNOWN 0
 #define STATE_AP 1
@@ -157,25 +158,32 @@ class WifiHandler
       }
     }    
 
-  public:
-    WifiHandler()
-    {
-      _pInstance = this;
-      _wifiState = STATE_UNKNOWN;
-    }
-
     int _lastWifiState = 0;
 
-    void handleServerTasks()
+    void initializeIfFirstTime()
     {
       if (!_pServer)
       {
         _pServer = new ESP8266WebServer(80);
-        generateRandomName();
         _pServer->on("/provision", handleProvisionStatic);
         _pServer->onNotFound(handleNotFoundStatic);
+
+        generateRandomName();
+
+        PersistentStorage persistentStorage;
+        strcpy(persistentStorage._hostname, _hostname.c_str());
+        persistentStorage.save();
+
+        PersistentStorage persistentStorage2;
+        persistentStorage2.load();
+        Serial.print("Back from storage");
+        Serial.println(persistentStorage2._hostname);
+       
       }
-      
+    }
+
+    void setupWireless()
+    {
       if (_wifiState != _lastWifiState)
       {
         Serial.print("handleServerTasks, state = ");
@@ -193,6 +201,22 @@ class WifiHandler
       {
         startAsServer();        
       }
+    }
+
+  public:
+    WifiHandler()
+    {
+      _pInstance = this;
+      _wifiState = STATE_UNKNOWN;
+    }
+
+
+
+    void handleServerTasks()
+    {
+      initializeIfFirstTime();
+      
+      setupWireless();
       
       _pServer->handleClient();
     }
