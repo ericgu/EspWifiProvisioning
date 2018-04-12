@@ -1,3 +1,6 @@
+
+#include <user_interface.h>
+
 #include <ESP8266WiFi.h>
 #include <ESP8266WiFiAP.h>
 #include <ESP8266WiFiGeneric.h>
@@ -13,10 +16,30 @@
 #include <ESP8266WebServer.h>
 
 #include "esp8266TrueRandom.h"
+#define FASTLED_INTERNAL
+
+#define FASTLED_ALLOW_INTERRUPTS 0
+#include "FastLED.h"
 
 #include "WifiHandler.h"
 
 WifiHandler wifiHandler;
+
+#define DATA_PIN    2
+//#define CLK_PIN   4
+#define LED_TYPE    WS2812B
+#define COLOR_ORDER GRB
+#define NUM_LEDS    33
+CRGB leds[NUM_LEDS];
+
+CRGB first;
+int rgbUpdated = 0;
+
+void rgbChanged(int red, int green, int blue)
+{
+  first = CRGB(red, green, blue);
+  rgbUpdated = 1;
+}
 
 void setup()
 {
@@ -25,14 +48,36 @@ void setup()
   Serial.begin(115200);
   Serial.println();
   Serial.println("setup");
+
+  FastLED.addLeds<LED_TYPE,DATA_PIN,COLOR_ORDER>(leds, NUM_LEDS);
+  wifiHandler.setRgbHandler(rgbChanged);
+
+  first = CRGB::Red;
 }
 
 void loop()
 {
   wifiHandler.handleServerTasks();
 
-  digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on (HIGH is the voltage level)
-  delay(1000);                       // wait for a second
-  digitalWrite(LED_BUILTIN, LOW);    // turn the LED off by making the voltage LOW
-  delay(1000);   
+  if (!rgbUpdated)
+  {
+    digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on (HIGH is the voltage level)
+    leds[0] = first;
+    FastLED.show();
+  
+    delay(500);                       // wait for a second
+
+    digitalWrite(LED_BUILTIN, LOW);    // turn the LED off by making the voltage LOW
+    leds[0] = CRGB::Green;
+    FastLED.show();
+    delay(500);   
+  }
+  else
+  {
+    for (int i = 0; i < 33; i++)
+    {
+      leds[i] = first;
+    }
+    FastLED.show();
+  }
 }

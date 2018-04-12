@@ -12,7 +12,6 @@ class PersistentStorage
 
     PersistentStorage()
     {
-      Serial.println("clearing...");
       memset(this, 0, sizeof(PersistentStorage));
     }
 

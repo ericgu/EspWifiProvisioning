@@ -161,9 +161,15 @@ void setup()
   Serial.println();
 }
 
+int done = 0;
+
 void loop()
 {
-  enumerateNetworks();
+  if (done == 0)
+  {
+    enumerateNetworks();
+    done = 1;
+  }
   
   //Serial.printf("Stations connected = %d\n", WiFi.softAPgetStationNum());
   digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on (HIGH is the voltage level)

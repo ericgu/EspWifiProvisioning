@@ -19,6 +19,8 @@
 #define STATE_AP 1
 #define STATE_STARTING_STA 2
 #define STATE_STA 3
+
+typedef void (*RgbChangedHandler)(int, int, int);
     
 class WifiHandler
 {
@@ -30,9 +32,12 @@ class WifiHandler
       _pInstance->handleNotFound();
     }
 
-
     static void handleProvisionStatic() {
       _pInstance->handleProvision();
+    }
+
+    static void handleRgbStatic() {
+      _pInstance->handleRgb();
     }
 
     ESP8266WebServer* _pServer;
@@ -40,6 +45,8 @@ class WifiHandler
     String _password;
     String _hostname;
     int _wifiState;
+    RgbChangedHandler _rgbChangedHandler;
+    int _debugMode;
 
     void handleNotFound() {
       Serial.println("handleNotFound");
@@ -66,6 +73,25 @@ class WifiHandler
         Serial.println(_password);
       }
     }
+
+    int getArgAsInt(char* pArgumentName)
+    {
+        return atoi(_pServer->arg(pArgumentName).c_str());
+    }
+
+    void handleRgb() {
+      //Serial.println("handleRgb");
+      _pServer->send(200, "text/html", "<h1>Updated...</h1>");
+
+      if (_rgbChangedHandler)
+      {
+        int red   = getArgAsInt("red");
+        int green = getArgAsInt("green");
+        int blue  = getArgAsInt("blue");
+
+        _rgbChangedHandler(red, green, blue);
+      }
+    }    
 
     void startAsClient()
     {
@@ -166,6 +192,7 @@ class WifiHandler
       {
         _pServer = new ESP8266WebServer(80);
         _pServer->on("/provision", handleProvisionStatic);
+        _pServer->on("/rgb", handleRgbStatic);
         _pServer->onNotFound(handleNotFoundStatic);
 
         generateRandomName();
@@ -208,10 +235,14 @@ class WifiHandler
     {
       _pInstance = this;
       _wifiState = STATE_UNKNOWN;
+      _debugMode = true;
     }
 
-
-
+    void setRgbHandler(RgbChangedHandler rgbChangedHandler)
+    {
+      _rgbChangedHandler = rgbChangedHandler;
+    }
+    
     void handleServerTasks()
     {
       initializeIfFirstTime();
