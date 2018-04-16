@@ -81,7 +81,8 @@ class WifiHandler
 
     void handleRgb() {
       //Serial.println("handleRgb");
-      _pServer->send(200, "text/html", "<h1>Updated...</h1>");
+      String result = "<h1>" + _pServer->arg("id") + "</h1>";
+      _pServer->send(200, "text/html", result.c_str());
 
       if (_rgbChangedHandler)
       {

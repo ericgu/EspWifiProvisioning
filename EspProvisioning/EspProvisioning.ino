@@ -1,5 +1,7 @@
 
+extern "C" {
 #include <user_interface.h>
+}
 
 #include <ESP8266WiFi.h>
 #include <ESP8266WiFiAP.h>
@@ -39,6 +41,9 @@ void rgbChanged(int red, int green, int blue)
 {
   first = CRGB(red, green, blue);
   rgbUpdated = 1;
+
+  uint32_t free = system_get_free_heap_size();  
+  Serial.println(free);
 }
 
 void setup()
