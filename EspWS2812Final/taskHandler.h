@@ -6,10 +6,10 @@ RgbColor blue(0, 0, colorSaturation);
 RgbColor white(colorSaturation);
 RgbColor black(0);
 
-class TaskBlinkLed : public Task
+class TaskHandler : public Task
 {
 public:
-    TaskBlinkLed(uint8_t pin, uint32_t timeInterval, NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod>& strip) : // pass any custom arguments you need
+    TaskHandler(uint8_t pin, uint32_t timeInterval, NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod>& strip) : // pass any custom arguments you need
         Task(timeInterval),
         ledPin(pin),
         ledOn(false),
@@ -18,6 +18,7 @@ public:
         _messageCount(0)
         // initialize members here
     { 
+      _setColor = RgbColor(127, 0, 0);
     };
 
     void SetClient(WiFiClient* pClient)
@@ -33,6 +34,7 @@ private:
     WiFiClient* _pClient;
     int _messageCount;
     uint8_t _buffer[1024];
+    RgbColor _setColor;
 
     virtual bool OnStart() // optional
     {
@@ -49,14 +51,14 @@ private:
         digitalWrite(ledPin, LOW);    // turn the LED off by making the voltage LOW
     }
 
-    void ProcessMessage(char* pMessage)
+    int ProcessMessage(char* pMessage)
     {
-      int red;
-      int green;
-      int blue;
+      int red = 0;
+      int green = 0;
+      int blue = 0;
 
       // rgb rrr,ggg,bbb
-      if (strcmp(pMessage, "rgb") == 0)
+      if (*pMessage == 'r')
       {
         pMessage += 4;
         red = atoi(pMessage);  
@@ -65,52 +67,70 @@ private:
         green = atoi(pMessage); 
          
         pMessage += 4;
-        blue = atoi(pMessage);  
-      }
+        blue = atoi(pMessage);         
+        
+        pMessage += 4;
+        int serial = atoi(pMessage); 
 
-      Serial.println("values ");
-      Serial.println(red);
-      Serial.println(green);
-      Serial.println(blue);
+        _setColor = RgbColor(red, green, blue);
+
+        return serial;
+      }
     }
 
     virtual void OnUpdate(uint32_t deltaTime)
     {
+#ifdef fred
         if (_pClient)
         {
           int bytesAvailable = _pClient->available();
           if (bytesAvailable > 0)
           {
-            _pClient->read(_buffer, bytesAvailable);
+            _pClient->read(_buffer, bytesAvailable < sizeof(_buffer) ? bytesAvailable : sizeof(_buffer));
             _buffer[bytesAvailable] = 0;
-            _pClient->write("SetRGB");
-            if (_messageCount % 100 == 0)
-            {
-              Serial.println((char*) _buffer);
-            }
             _messageCount++;
+            int serial = ProcessMessage((char*) _buffer);
+
+            char buffer2[16];
+            itoa(serial, buffer2, 10);
+
+            char buffer[16];
+            buffer[0] = 0;
+            strcpy(buffer, "RGB");
+            strcat(buffer, buffer2);
+            _pClient->write(&buffer[0], sizeof(buffer));
+            //Serial.println(buffer);
+
+            if (serial % 1000 == 0)
+            {
+              Serial.println(system_get_free_heap_size());
+              Serial.println(_pClient->status());
+            }
+          }
+          else
+          {
+            Serial.println(_pClient->status());
           }
         }
-      
+
+        _strip.SetPixelColor(0, _setColor);
+        _strip.SetPixelColor(1, _setColor);
+        _strip.SetPixelColor(2, _setColor);
+        _strip.RotateRight(3);
+        _strip.Show();  
+
+        if (_messageCount % 100 == 0)
+        {
+          //Serial.println(_messageCount);
+        }
+#endif
         if (ledOn)
         {
             digitalWrite(ledPin, LOW);    // turn the LED off by making the voltage LOW
-            _strip.SetPixelColor(2, red);
-            _strip.SetPixelColor(3, green);
-            _strip.SetPixelColor(0, blue);
-            _strip.SetPixelColor(1, white);
-            _strip.RotateRight(4);
-            _strip.Show();            
         }
         else
         {
             digitalWrite(ledPin, HIGH);   // turn the LED on (HIGH is the voltage level)
-            _strip.SetPixelColor(0, red);
-            _strip.SetPixelColor(1, green);
-            _strip.SetPixelColor(2, blue);
-            _strip.SetPixelColor(3, white);
-            _strip.RotateRight(4);
-            _strip.Show();            
         }
 
         ledOn = !ledOn; // toggle led state

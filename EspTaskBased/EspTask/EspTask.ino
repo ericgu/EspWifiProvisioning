@@ -3,6 +3,7 @@
 
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
+#include <WiFiUdp.h>
 
 #include <NeoPixelBus.h>
 
@@ -24,14 +25,20 @@ const uint8_t PixelPin = 2;  // make sure to set this to the correct pin, ignore
 NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> strip(PixelCount, PixelPin);
 //NeoPixelBus<NeoGrbFeature, NeoEsp8266Uart800KbpsMethod> strip(PixelCount, PixelPin);
 
-WiFiServer server(5045);
-WiFiClient client;
+//WiFiServer server(5045);
+//WiFiClient client;
 int maxTicks;
 
-TaskManager taskManager;
-TaskBlinkLed taskBlinkLed(LED_BUILTIN, MsToTaskTime(100), strip);
+RgbColor r(64, 0, 0);
 
-RgbColor r(colorSaturation, 0, 0);
+WiFiUDP udp;
+unsigned int localUdpPort = 4210;  // local port to listen on
+char incomingPacket[255];  // buffer for incoming packets
+
+char  replyPacket[] = "Hi there! Got the message :-)";  // a reply string to send back
+TaskManager taskManager;
+TaskBlinkLed taskBlinkLed(LED_BUILTIN, MsToTaskTime(5), strip, &udp);
+
 
 void setup() {
     pinMode(LED_BUILTIN, OUTPUT);
@@ -55,7 +62,9 @@ void setup() {
   Serial.println("Connected");
   Serial.printf("Now listening at IP %s\n", WiFi.localIP().toString().c_str());  
 
-  server.begin();
+  //server.begin();
+  udp.begin(localUdpPort);
+  Serial.printf("Now listening at IP %s, UDP port %d\n", WiFi.localIP().toString().c_str(), localUdpPort);
 
   maxTicks = 0;
 
@@ -69,16 +78,62 @@ void setup() {
   strip.Show();
 }
 
+int count;
+int packetCount = 0;
+
 void loop() {
   taskManager.Loop();
 
-  Serial.println(".");
+  //int startTicks = system_get_time();
 
-    int startTicks = system_get_time();
+#ifdef fred
+  int packetSize = udp.parsePacket();
+  if (packetSize)
+  {
+    // receive incoming UDP packets
+    Serial.printf("Received %d bytes from %s, port %d\n", packetSize, udp.remoteIP().toString().c_str(), udp.remotePort());
+    int len = udp.read(incomingPacket, 255);
+    if (len > 0)
+    {
+      incomingPacket[len] = 0;
+    }
+  }
 
+
+    int serial = ProcessMessage(incomingPacket);
+    if (serial != lastSerialNumber + 1)
+    {
+      Serial.println("Missed");
+      missedMessages++;
+    }
+    lastSerialNumber = serial;
+#endif
+    
+    //Serial.printf("UDP packet contents: %s\n", incomingPacket);
+
+    // send back a reply, to the IP address and port we got the packet from
+    //Udp.beginPacket(Udp.remoteIP(), Udp.remotePort());
+    //Udp.write(replyPacket);
+    //Udp.endPacket();
+
+    //if (packetCount % 1000 == 0)
+#ifdef fred
+    {
+      Serial.print(packetCount);
+      Serial.print(" ");
+      //Serial.println(missedMessages);
+    }
+    packetCount++;
+#endif
+  }
+
+#ifdef fred
   if (!client.connected()) {
     client = server.available();
-    taskBlinkLed.SetClient(&client);
+    if (client)
+    {
+      taskBlinkLed.SetClient(&client);
+    }
   }
- 
-}
+#endif
+
