@@ -1,40 +1,44 @@
-#define colorSaturation 127
+#include "pixelMessageHandler.h"
 
-RgbColor red(colorSaturation, 0, 0);
-RgbColor green(0, colorSaturation, 0);
-RgbColor blue(0, 0, colorSaturation);
-RgbColor white(colorSaturation);
-RgbColor black(0);
-
-class TaskBlinkLed : public Task
+class TaskProcessMessages : public Task
 {
 public:
-    TaskBlinkLed(uint8_t pin, uint32_t timeInterval, NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod>& strip, WiFiUDP* pUdp) : // pass any custom arguments you need
+    TaskProcessMessages(uint8_t pin, uint32_t timeInterval, NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod>* pStrip, WifiHandler* pWifiHandler) : // pass any custom arguments you need
         Task(timeInterval),
         ledPin(pin),
         ledOn(false),
-        _strip(strip),
-        _pUdp(pUdp),
-        _messageCount(0)
-        // initialize members here
+        _pStrip(pStrip),
+        _pWifiHandler(pWifiHandler)
     { 
       _setColor = RgbColor(127, 0, 0);
       _ledUpdateCountInitialValue = 500 / _timeInterval;
       _ledUpdateCount = _ledUpdateCountInitialValue;
+      _pPixelMessageHandler = new PixelMessageHandler(pStrip);
     };
 
+    void Init()
+    {
+      _udp.begin(localUdpPort);
+      Serial.printf("Now listening at IP %s, UDP port %d\n", WiFi.localIP().toString().c_str(), localUdpPort);
+    }
+
 private:
-    // put member variables here that are scoped to this object
+    const unsigned int localUdpPort = 4210;  // local port to listen on
+
+    WifiHandler* _pWifiHandler;
+    WiFiUDP _udp;
     bool ledOn;
     const uint8_t ledPin; // const means can't change other than in constructor
-    NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod>& _strip;
-    WiFiUDP* _pUdp;
-    int _messageCount;
-    uint8_t _buffer[1024];
+    NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod>* _pStrip;
+    PixelMessageHandler* _pPixelMessageHandler;
+    //WiFiUDP* _pUdp;
+    char _buffer[1024];
     RgbColor _setColor;
     int _packetCount= 0;
     int _ledUpdateCountInitialValue;
     int _ledUpdateCount;
+    int _updatesWithoutPackets = 0;
+    int _updateCount = 0;
 
     virtual bool OnStart() // optional
     {
@@ -51,78 +55,33 @@ private:
         digitalWrite(ledPin, LOW);    // turn the LED off by making the voltage LOW
     }
 
-    int ProcessMessage(char* pMessage)
-    {
-      int red = 0;
-      int green = 0;
-      int blue = 0;
-
-      // rgb rrr,ggg,bbb
-      if (*pMessage == 'r')
-      {
-        pMessage += 4;
-        red = atoi(pMessage);  
-        
-        pMessage += 4;
-        green = atoi(pMessage); 
-         
-        pMessage += 4;
-        blue = atoi(pMessage);         
-        
-        pMessage += 4;
-        int serial = atoi(pMessage); 
-
-        _setColor = RgbColor(red, green, blue);
-
-        for (int led = 0; led < 33; led++)
-        {
-          _strip.SetPixelColor(led, _setColor);
-        }
-        _strip.Show();          
-
-        return serial;
-      }
-      else (*pMessage == 'a')
-      {
-        _strip.Show();          
-        
-
-        return 0;
-      }
-      
-    }
-
     virtual void OnUpdate(uint32_t deltaTime)
     {
-      char incomingPacket[255];  // buffer for incoming packets
-
-      int packetSize = _pUdp->parsePacket();
+      int packetSize = _udp.parsePacket();
       if (packetSize)
       {
         // receive incoming UDP packets
-        //Serial.printf("Received %d bytes from %s, port %d\n", packetSize, _pUdp->remoteIP().toString().c_str(), _pUdp->remotePort());
-        int len = _pUdp->read(incomingPacket, 255);
+        //Serial.printf("Received %d bytes from %s, port %d\n", packetSize, _udp.remoteIP().toString().c_str(), _udp.remotePort());
+        int len = _udp.read(_buffer, sizeof(_buffer) - 1);
         if (len > 0)
         {
-          incomingPacket[len] = 0;
+          _buffer[len] = 0;
         }
 
         if (_packetCount % 1000 == 0)
         {
           Serial.print(_packetCount);
-          Serial.println(" ");
+          Serial.print(" ");
+          Serial.println(system_get_free_heap_size());
           //Serial.println(missedMessages);
         }
         _packetCount++;
 
-        int serial = ProcessMessage(incomingPacket);
-
-
-        if (_messageCount % 100 == 0)
-        {
-          //Serial.println(_messageCount);
-        }
-        
+        int serial = _pPixelMessageHandler->ProcessMessage(_buffer);
+      }
+      else
+      {
+        _updatesWithoutPackets++;
       }
 
       _ledUpdateCount--;
@@ -141,61 +100,14 @@ private:
 
         ledOn = !ledOn; // toggle led state
       }
+
+      _updateCount++;
+      if (_updateCount % 1000 == 0)
+      {
+        //Serial.print("Updates without packets: ");
+        //Serial.println(_updatesWithoutPackets);
+      }
+
+      _pWifiHandler->Init();
     }     
-    
-#ifdef fred
-        if (_pClient)
-        {
-          int bytesAvailable = _pClient->available();
-          if (bytesAvailable > 0)
-          {
-            _pClient->read(_buffer, bytesAvailable < sizeof(_buffer) ? bytesAvailable : sizeof(_buffer));
-            _buffer[bytesAvailable] = 0;
-            _messageCount++;
-            int serial = ProcessMessage((char*) _buffer);
-
-            char buffer2[16];
-            itoa(serial, buffer2, 10);
-
-            char buffer[16];
-            buffer[0] = 0;
-            strcpy(buffer, "RGB");
-            strcat(buffer, buffer2);
-            _pClient->write(&buffer[0], sizeof(buffer));
-            //Serial.println(buffer);
-
-            if (serial % 1000 == 0)
-            {
-              Serial.println(system_get_free_heap_size());
-              Serial.println(_pClient->status());
-            }
-          }
-          else
-          {
-            Serial.println(_pClient->status());
-          }
-        }
-
-        _strip.SetPixelColor(0, _setColor);
-        _strip.SetPixelColor(1, _setColor);
-        _strip.SetPixelColor(2, _setColor);
-        _strip.RotateRight(3);
-        _strip.Show();  
-
-        if (_messageCount % 100 == 0)
-        {
-          //Serial.println(_messageCount);
-        }
-        if (ledOn)
-        {
-            digitalWrite(ledPin, LOW);    // turn the LED off by making the voltage LOW
-        }
-        else
-        {
-            digitalWrite(ledPin, HIGH);   // turn the LED on (HIGH is the voltage level)
-        }
-
-        ledOn = !ledOn; // toggle led state
-    }
-#endif
 };
