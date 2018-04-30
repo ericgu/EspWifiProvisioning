@@ -1,19 +1,15 @@
-#include "pixelMessageHandler.h"
-
 class TaskProcessMessages : public Task
 {
 public:
-    TaskProcessMessages(uint8_t pin, uint32_t timeInterval, NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod>* pStrip, WifiHandler* pWifiHandler) : // pass any custom arguments you need
+    TaskProcessMessages(uint8_t ledPin, uint32_t timeInterval, PixelHandler* pPixelHandler, WifiHandler* pWifiHandler) : // pass any custom arguments you need
         Task(timeInterval),
-        ledPin(pin),
-        ledOn(false),
-        _pStrip(pStrip),
-        _pWifiHandler(pWifiHandler)
+        _ledPin(ledPin),
+        _ledOn(false),
+        _pWifiHandler(pWifiHandler),
+        _pPixelHandler(pPixelHandler)
     { 
-      _setColor = RgbColor(127, 0, 0);
       _ledUpdateCountInitialValue = 500 / _timeInterval;
       _ledUpdateCount = _ledUpdateCountInitialValue;
-      _pPixelMessageHandler = new PixelMessageHandler(pStrip);
     };
 
     void Init()
@@ -27,13 +23,10 @@ private:
 
     WifiHandler* _pWifiHandler;
     WiFiUDP _udp;
-    bool ledOn;
-    const uint8_t ledPin; // const means can't change other than in constructor
-    NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod>* _pStrip;
-    PixelMessageHandler* _pPixelMessageHandler;
-    //WiFiUDP* _pUdp;
+    bool _ledOn;
+    const uint8_t _ledPin; // const means can't change other than in constructor
+    PixelHandler* _pPixelHandler;
     char _buffer[1024];
-    RgbColor _setColor;
     int _packetCount= 0;
     int _ledUpdateCountInitialValue;
     int _ledUpdateCount;
@@ -43,19 +36,19 @@ private:
     virtual bool OnStart() // optional
     {
         // put code here that will be run when the task starts
-        ledOn = false;
-        pinMode(ledPin, OUTPUT);
+        _ledOn = false;
+        pinMode(_ledPin, OUTPUT);
         return true;
     }
 
     virtual void OnStop() // optional
     {
         // put code here that will be run when the task stops
-        ledOn = false;
-        digitalWrite(ledPin, LOW);    // turn the LED off by making the voltage LOW
+        _ledOn = false;
+        digitalWrite(_ledPin, LOW);    // turn the LED off by making the voltage LOW
     }
 
-    virtual void OnUpdate(uint32_t deltaTime)
+    void UpdateHandleUdp()
     {
       int packetSize = _udp.parsePacket();
       if (packetSize)
@@ -77,28 +70,23 @@ private:
         }
         _packetCount++;
 
-        int serial = _pPixelMessageHandler->ProcessMessage(_buffer);
+        int serial = _pPixelHandler->ProcessMessage(_buffer);
       }
       else
       {
         _updatesWithoutPackets++;
       }
+    }
 
+    void UpdateHandleLed()
+    {
       _ledUpdateCount--;
       if (_ledUpdateCount == 0)
       {
         _ledUpdateCount = _ledUpdateCountInitialValue;
-        
-        if (ledOn)
-        {
-            digitalWrite(ledPin, LOW);    // turn the LED off by making the voltage LOW
-        }
-        else
-        {
-            digitalWrite(ledPin, HIGH);   // turn the LED on (HIGH is the voltage level)
-        }
 
-        ledOn = !ledOn; // toggle led state
+        digitalWrite(_ledPin, _ledOn ? LOW : HIGH);
+        _ledOn = !_ledOn; // toggle led state
       }
 
       _updateCount++;
@@ -107,7 +95,21 @@ private:
         //Serial.print("Updates without packets: ");
         //Serial.println(_updatesWithoutPackets);
       }
+    }
 
+    void UpdatePixelHandler()
+    {
+      _pPixelHandler->Update();
+    }
+
+    virtual void OnUpdate(uint32_t deltaTime)
+    {
+      UpdateHandleUdp();
+      
+      UpdateHandleLed();
+
+      UpdatePixelHandler();
+ 
       _pWifiHandler->Init();
     }     
 };

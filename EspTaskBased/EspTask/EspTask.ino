@@ -7,71 +7,53 @@
 
 #include <NeoPixelBus.h>
 
-
-//#define FASTLED_INTERNAL
-//#include <FastLED.h>
-
 extern "C" {
 #include "user_interface.h"
 }
 
+#include "IAnimation.h"
+#include "AnimationBlendTo.h"
+#include "AnimationAlternate.h"
+#include "AnimationIndividual.h"
+#include "PersistentStorage.h"
 #include "WifiHandler.h"
+#include "PixelHandler.h"
 #include "taskProcessMessages.h"
 #include "webServer.h"
+
+PersistentStorage persistentStorage;
 
 const uint16_t PixelCount = 33; // this example assumes 4 pixels, making it smaller will cause a failure
 const uint8_t PixelPin = 2;  // make sure to set this to the correct pin, ignored for Esp8266
 
-#define colorSaturation 128
-
-// three element pixels, in different order and speeds
-NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> strip(PixelCount, PixelPin);
-
-int maxTicks;
-
-RgbColor r(64, 0, 0);
-
-char incomingPacket[255];  // buffer for incoming packets
-
+PixelHandler pixelHandler(PixelCount, PixelPin);
 WifiHandler wifiHandler;
-
 TaskManager taskManager;
-TaskProcessMessages taskProcessMessages(LED_BUILTIN, MsToTaskTime(5), &strip, &wifiHandler);
+
+TaskProcessMessages taskProcessMessages(LED_BUILTIN, MsToTaskTime(5), &pixelHandler, &wifiHandler);
 
 WebServer webServer;
 
 void setup() {
-  pinMode(LED_BUILTIN, OUTPUT);
-
   Serial.begin(115200);
   //Serial.setDebugOutput(true);
 
-  //wifiHandler.setParamsForDebug("ASUS", "Gunnerson", "EDP44");
-
-  wifiHandler.LoadConfiguration();
-  wifiHandler.Init();
+  pixelHandler.Init();
 
   taskProcessMessages.Init();
 
-  webServer.SetWifiHandler(&wifiHandler);
+  webServer.SetHandlers(&wifiHandler, &pixelHandler);
   webServer.Init();
-
-  maxTicks = 0;
 
   taskManager.StartTask(&taskProcessMessages);
 
-  strip.Begin();
-  for (int i = 0; i < PixelCount; i++)
-  {
-    strip.SetPixelColor(i, r);
-  }
-  strip.Show();
+  wifiHandler.LoadConfiguration(&persistentStorage);
+  //wifiHandler.setParamsForDebug("ASUS", "Gunnerson", "EDP44");
+  wifiHandler.Init();
 }
 
 void loop() {
   taskManager.Loop();
-
-  //int startTicks = system_get_time();
 }
 
 

@@ -1,6 +1,5 @@
 
 #include "esp8266truerandom.h"
-#include "PersistentStorage.h"
 
 #define STATE_UNKNOWN 0
 #define STATE_AP 1
@@ -10,24 +9,25 @@
 class WifiHandler
 {
   private:
-    PersistentStorage _configuration;
+    PersistentStorage* _pConfiguration;
     int _wifiState; 
     int _lastWifiState = -1;
 
   
   public:
 
-    void LoadConfiguration()
+    void LoadConfiguration(PersistentStorage* pPersistentStorage)
     {
-      _configuration.Load();
+      _pConfiguration = pPersistentStorage;
+      _pConfiguration->Load();
       _wifiState = STATE_STARTING_STA;
     }
 
     void setParamsForDebug(String ssid, String password, String hostname)
     {
-      _configuration.SsidSet(ssid);
-      _configuration.PasswordSet(password);
-      _configuration.HostNameSet(hostname);
+      _pConfiguration->SsidSet(ssid);
+      _pConfiguration->PasswordSet(password);
+      _pConfiguration->HostNameSet(hostname);
       _wifiState = STATE_STARTING_STA;
     }
 
@@ -35,43 +35,13 @@ class WifiHandler
     {
       Serial.println("setWirelessParametersAndRestart");
       
-      _configuration.SsidSet(ssid);
-      _configuration.PasswordSet(password);
+      _pConfiguration->SsidSet(ssid);
+      _pConfiguration->PasswordSet(password);
       _wifiState = STATE_STARTING_STA;
     }
 
-    void startAsClient()
+    void PrintStatus()
     {
-      Serial.println("Disconnecting, waiting to finish");
-      //WiFi.mode(WIFI_OFF);
-      WiFi.disconnect();
-      while (WiFi.status() != WL_DISCONNECTED && WiFi.status() != WL_IDLE_STATUS)
-      {
-        Serial.println(WiFi.status());
-        delay(50);
-      }
-
-      Serial.println("starting STA");
-      Serial.print("Connecting to: ");
-      Serial.println(_configuration._ssid);
-      Serial.println(_configuration._password);
-      Serial.print(WiFi.status());
-      
-      WiFi.mode(WIFI_STA);
-      while (WiFi.getMode() != WIFI_STA)
-      {
-        Serial.print("M");
-        delay(50);
-      }
-      WiFi.disconnect();
-      Serial.println(_configuration.HostNameGet());
-      WiFi.hostname(_configuration.HostNameGet());
-      WiFi.begin(_configuration._ssid, _configuration._password);
-
-      int timeout = 80000;
-      while (WiFi.status() != WL_CONNECTED && timeout > 0)
-      {
-        delay(500);
         switch (WiFi.status())
         {
           case WL_CONNECTED:
@@ -99,22 +69,59 @@ class WifiHandler
             Serial.println("WL_DISCONNECTED");
             break;
         }
-     
-        Serial.print(WiFi.status());
+    }
+
+    void startAsClient()
+    {
+      Serial.println("SAC: Disconnecting, waiting to finish");
+      //WiFi.mode(WIFI_OFF);
+      WiFi.disconnect();
+      while (WiFi.status() != WL_DISCONNECTED && WiFi.status() != WL_IDLE_STATUS)
+      {
+        Serial.println(WiFi.status());
+        delay(50);
+      }
+
+      Serial.println("SAC: starting STA");
+      Serial.print("SAC: Connecting to: ");
+      Serial.println(_pConfiguration->_ssid);
+      Serial.println(_pConfiguration->_password);
+      Serial.print(WiFi.status());
+      
+      WiFi.mode(WIFI_STA);
+      while (WiFi.getMode() != WIFI_STA)
+      {
+        Serial.print("M");
+        delay(50);
+      }
+      WiFi.disconnect();
+      Serial.println(_pConfiguration->HostNameGet());
+      WiFi.hostname(_pConfiguration->HostNameGet());
+      WiFi.begin(_pConfiguration->_ssid, _pConfiguration->_password);
+
+      int timeout = 80000;
+      while (WiFi.status() != WL_CONNECTED && timeout > 0)
+      {
+        Serial.print(".");
+        delay(50);
+ 
+        //PrintStatus();
+        //Serial.print(WiFi.status());
         timeout--;
       }
+      Serial.println();
 
       if (WiFi.status() == WL_CONNECTED)
       {
-        Serial.print("Connected: ");
+        Serial.print("SAC: Connected: ");
         Serial.println(WiFi.localIP());
 
         _wifiState = STATE_STA;
-        _configuration.Save();
+        _pConfiguration->Save();
       }
       else
       {
-        Serial.print("Connect failed, status = ");
+        Serial.print("SAC: Connect failed, status = ");
         Serial.println(WiFi.status());
       }
     }
@@ -122,22 +129,22 @@ class WifiHandler
     void startAsAccessPoint() {
       generateRandomName();
       
-      Serial.print("Setting soft-AP:  ");
-      Serial.println(_configuration._hostName);
+      Serial.print("SAAP: Setting soft-AP:  ");
+      Serial.println(_pConfiguration->_hostName);
       WiFi.mode(WIFI_AP);
-      boolean result = WiFi.softAP(_configuration._hostName, _configuration._hostName);
+      boolean result = WiFi.softAP(_pConfiguration->_hostName, _pConfiguration->_hostName);
       if(result == true)
       {
-        Serial.println("Ready");
+        Serial.println("SAAP: Ready");
         IPAddress myIP = WiFi.softAPIP();
-        Serial.print("AP IP address: ");
+        Serial.print("SAAP: AP IP address: ");
         Serial.println(myIP);
-        Serial.println("HTTP server started");
+        Serial.println("SAAP: HTTP server started");
         _wifiState = STATE_AP;
       }
       else
       {
-        Serial.println("Failed!");
+        Serial.println("SAAP: Failed!");
       }
     }  
 
@@ -148,7 +155,7 @@ class WifiHandler
       ltoa(ESP8266TrueRandom.random(), buf, 10);
       String hostName = String("EDP_") + buf;
       
-      _configuration.HostNameSet(hostName);
+      _pConfiguration->HostNameSet(hostName);
     }
 
     void Init()
@@ -161,7 +168,7 @@ class WifiHandler
       }
       
         // if we aren't in station mode and we have an SSID, try to start up in station mode:
-      if (_wifiState == STATE_STARTING_STA && _configuration.SsidGet().length() != 0)
+      if (_wifiState == STATE_STARTING_STA && _pConfiguration->SsidGet().length() != 0)
       {
         startAsClient(); 
       }

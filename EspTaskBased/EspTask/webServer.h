@@ -1,6 +1,5 @@
 #include <ESPAsyncWebServer.h>
 
-
 class WebServer
 {
   private:
@@ -8,6 +7,7 @@ class WebServer
   
     AsyncWebServer* _pServer;
     WifiHandler* _pWifiHandler;
+    PixelHandler* _pPixelHandler;
 
     static void OnNotFound(AsyncWebServerRequest* pRequest)
     {
@@ -36,10 +36,24 @@ class WebServer
       pRequest->send(200, "text/plain", "Starting provisioning");      
     }
 
+    static void OnMessage(AsyncWebServerRequest* pRequest) {
+      if (pRequest->hasArg("content"))
+      {
+        String content = pRequest->arg("content");
+
+        Serial.print("content: "); Serial.println(content);
+
+        _pWebServer->_pPixelHandler->ProcessMessage(content.c_str());
+      }      
+
+      pRequest->send(200, "text/plain", "Accepted");      
+    }
+
   public:
-    void SetWifiHandler(WifiHandler* pWifiHandler)
+    void SetHandlers(WifiHandler* pWifiHandler, PixelHandler* pPixelHandler)
     {
       _pWifiHandler = pWifiHandler;  
+      _pPixelHandler = pPixelHandler;
     }
     
     void Init()
@@ -51,6 +65,7 @@ class WebServer
       _pServer->onNotFound(OnNotFound);
       _pServer->on("/info", OnInfo);
       _pServer->on("/provision", OnProvision);
+      _pServer->on("/message", OnMessage);
 
       _pServer->begin();
     }
