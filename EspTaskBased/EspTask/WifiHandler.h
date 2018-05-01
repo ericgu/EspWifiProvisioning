@@ -19,7 +19,6 @@ class WifiHandler
     void LoadConfiguration(PersistentStorage* pPersistentStorage)
     {
       _pConfiguration = pPersistentStorage;
-      _pConfiguration->Load();
       _wifiState = STATE_STARTING_STA;
     }
 
@@ -99,11 +98,11 @@ class WifiHandler
       WiFi.hostname(_pConfiguration->HostNameGet());
       WiFi.begin(_pConfiguration->_ssid, _pConfiguration->_password);
 
-      int timeout = 80000;
+      int timeout = 30;
       while (WiFi.status() != WL_CONNECTED && timeout > 0)
       {
         Serial.print(".");
-        delay(50);
+        delay(500);
  
         //PrintStatus();
         //Serial.print(WiFi.status());
@@ -123,6 +122,7 @@ class WifiHandler
       {
         Serial.print("SAC: Connect failed, status = ");
         Serial.println(WiFi.status());
+        _wifiState = STATE_UNKNOWN;
       }
     }
 

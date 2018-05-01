@@ -14,7 +14,7 @@ class AnimationBlendTo: public IAnimation
   public: 
 
     AnimationBlendTo(NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod>* pString, int pixelCount) : 
-        IAnimation(pString, pixelCount)
+        IAnimation(pString, pixelCount, "Blend")
         {}
 
     bool ProcessMessage(const char* pMessage)
@@ -27,6 +27,8 @@ class AnimationBlendTo: public IAnimation
       // rgb rrr,ggg,bbb,cccc
       if (*pMessage == 'r')
       {
+        _lastMessage = pMessage;
+        
         pMessage += 4;
         red = atoi(pMessage);  
         
@@ -44,7 +46,7 @@ class AnimationBlendTo: public IAnimation
         }
 
         DoBlend(RgbColor(red, green, blue), count);
-
+        
         return true;
       }
 

@@ -9,6 +9,7 @@ class PersistentStorage
     char _ssid[33];
     char _password[65];
     char _hostName[33];
+    char _startingAnimation[128];
 
     PersistentStorage()
     {
@@ -30,7 +31,7 @@ class PersistentStorage
       
       EEPROM.put(0, this);
       EEPROM.commit();
-      Serial.println("Saved");
+      Serial.println("Saved configuration");
     }
 
     void Load()
@@ -45,10 +46,11 @@ class PersistentStorage
       }      
       EEPROM.get(0, this);    
 
-      Serial.println("Loaded");
+      Serial.println("Loaded configuration");
       Serial.println(_hostName);
       Serial.println(_ssid);
       Serial.println(_password);
+      Serial.println(_startingAnimation);
     }
 
     void SsidSet(String ssid)
@@ -80,6 +82,6 @@ class PersistentStorage
     {
       return String(_hostName);
     }
-  
+
 };
 

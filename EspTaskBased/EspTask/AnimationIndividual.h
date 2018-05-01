@@ -8,7 +8,7 @@ class AnimationIndividual: public IAnimation
   public: 
 
     AnimationIndividual(NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod>* pString, int pixelCount) : 
-        IAnimation(pString, pixelCount)
+        IAnimation(pString, pixelCount, "Individual pixels")
     {
       _pColors = new RgbColor[pixelCount];      
     }

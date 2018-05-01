@@ -70,7 +70,7 @@ private:
         }
         _packetCount++;
 
-        int serial = _pPixelHandler->ProcessMessage(_buffer);
+        _pPixelHandler->ProcessMessage(_buffer);
       }
       else
       {

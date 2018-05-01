@@ -1,4 +1,3 @@
-
 class AnimationAlternate: public IAnimation
 {
   private:
@@ -6,12 +5,11 @@ class AnimationAlternate: public IAnimation
     RgbColor _secondColor;
     int _count;
     int _currentCount = 0;
-
  
   public: 
 
     AnimationAlternate(NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod>* pString, int pixelCount) : 
-        IAnimation(pString, pixelCount)
+        IAnimation(pString, pixelCount, "Alternate")
         {}
 
     // alt rrr,ggg,bbb,rrr,ggg,bbb,cccc
@@ -24,6 +22,8 @@ class AnimationAlternate: public IAnimation
 
       if (*pMessage == 'a')
       {
+        _lastMessage = pMessage;
+        
         pMessage += 4;
         red = atoi(pMessage);  
         
@@ -49,7 +49,7 @@ class AnimationAlternate: public IAnimation
         pMessage += 4;
         _count = atoi(pMessage);
         _currentCount = 0;
-        
+
         return true;
       }
 
