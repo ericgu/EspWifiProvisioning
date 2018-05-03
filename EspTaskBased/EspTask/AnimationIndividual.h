@@ -31,14 +31,18 @@ class AnimationIndividual: public IAnimation
     
     // ind bbb,RRGGBBRRGGBB...
     // block size (number for each color), followed by 2 digit Hex color value
-    bool ProcessMessage(const char* pMessage)
+    bool ProcessMessage(const char* pMessage, ParseNumbers* pParseNumbers)
     {
       if (*pMessage == 'i') // individual with specified chunk size.
       {
-        pMessage += 4;
-        int blockSize = atoi(pMessage); 
+        pMessage = ParseNumbers::SkipToFirstDigit(pMessage);
 
-        pMessage += 4;  // skip block size
+        int blockSize = atoi(pMessage);
+
+        pMessage = ParseNumbers::SkipToFirstNonDigit(pMessage);
+        pMessage = ParseNumbers::SkipToFirstDigit(pMessage);
+
+        Serial.println(pMessage);
 
         // two hex bytes for color of each led
 
@@ -71,7 +75,7 @@ class AnimationIndividual: public IAnimation
 
         for (int led = 0; led < _pixelCount; led++)
         {
-          _pStrip->SetPixelColor(led, *pColor);
+          SetPixelColor(led, *pColor);
           pColor++;
         }
         _pStrip->Show(); 

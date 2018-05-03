@@ -17,18 +17,20 @@ class AnimationFlashDecay: public IAnimation
         IAnimation(pString, pixelCount, "Flash decay")
         {}
 
-    bool ProcessMessage(const char* pMessage)
+    bool ProcessMessage(const char* pMessage, ParseNumbers* pParseNumbers)
     {
       // fdc cccc
       if (*pMessage == 'f')
       {
         _lastMessage = pMessage;
 
-        pMessage += 4;
-        _stepsOn = atoi(pMessage);  
+        if (pParseNumbers->_count < 2)
+        {
+          return false;
+        }
 
-        pMessage += 4;
-        _stepsWait = atoi(pMessage);  
+        _stepsOn = pParseNumbers->_values[0];
+        _stepsWait = pParseNumbers->_values[0];
 
         return true;
       }
@@ -68,7 +70,7 @@ class AnimationFlashDecay: public IAnimation
 
       for (int led = 0; led < _pixelCount; led++)
       {
-        _pStrip->SetPixelColor(led, _setColor);
+        SetPixelColorWithGamma(led, _setColor);
       }
       _pStrip->Show(); 
     }

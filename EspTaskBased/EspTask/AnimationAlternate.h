@@ -14,7 +14,7 @@ class AnimationAlternate: public IAnimation
 
     // alt rrr,ggg,bbb,rrr,ggg,bbb,cccc
     //      (first)       (second)  (count)
-    bool ProcessMessage(const char* pMessage)
+    bool ProcessMessage(const char* pMessage, ParseNumbers* pParseNumbers)
     {
       int red;
       int green;
@@ -23,31 +23,16 @@ class AnimationAlternate: public IAnimation
       if (*pMessage == 'a')
       {
         _lastMessage = pMessage;
-        
-        pMessage += 4;
-        red = atoi(pMessage);  
-        
-        pMessage += 4;
-        green = atoi(pMessage); 
-         
-        pMessage += 4;
-        blue = atoi(pMessage);         
 
-        _firstColor = RgbColor(red, green, blue);
+        pParseNumbers->Dump();
+        if (pParseNumbers->_count < 7)
+        {
+          return false;
+        }
         
-        pMessage += 4;
-        red = atoi(pMessage);  
-        
-        pMessage += 4;
-        green = atoi(pMessage); 
-         
-        pMessage += 4;
-        blue = atoi(pMessage);         
-
-        _secondColor = RgbColor(red, green, blue);
-        
-        pMessage += 4;
-        _count = atoi(pMessage);
+        _firstColor = RgbColor(pParseNumbers->_values[0], pParseNumbers->_values[1], pParseNumbers->_values[2]);
+        _secondColor = RgbColor(pParseNumbers->_values[3], pParseNumbers->_values[4], pParseNumbers->_values[5]);
+        _count = pParseNumbers->_values[6];
         _currentCount = 0;
 
         return true;
@@ -64,7 +49,7 @@ class AnimationAlternate: public IAnimation
       
       for (int led = 0; led < _pixelCount; led++)
       {
-        _pStrip->SetPixelColor(led, color);
+        SetPixelColorWithGamma(led, color);
       }
       _pStrip->Show(); 
     }      

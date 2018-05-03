@@ -14,15 +14,18 @@ class AnimationColorRotate: public IAnimation
         IAnimation(pString, pixelCount, "Color rotate")
         {}
 
-    bool ProcessMessage(const char* pMessage)
+    bool ProcessMessage(const char* pMessage, ParseNumbers* pParseNumbers)
     {
       // crt cccc
       if (*pMessage == 'c')
       {
         _lastMessage = pMessage;
+        if (pParseNumbers->_count < 1)
+        {
+          return false;
+        }
         
-        pMessage += 4;
-        _steps = atoi(pMessage);  
+        _steps = pParseNumbers->_values[0];  
 
         return true;
       }
@@ -30,22 +33,22 @@ class AnimationColorRotate: public IAnimation
       return false;
     }
       
-    HsbColor GetColor()
+    RgbColor GetColor()
     {
       _currentStep = (_currentStep + 1) % _steps;
 
       float hue = (1.0 * _currentStep) / _steps;
 
-      return HsbColor(hue, _saturation, _brightness);
+      return RgbColor(HsbColor(hue, _saturation, _brightness));
     }
 
     void Update()
     {
-      HsbColor _setColor = GetColor();
+      RgbColor _setColor = GetColor();
 
       for (int led = 0; led < _pixelCount; led++)
       {
-        _pStrip->SetPixelColor(led, _setColor);
+        SetPixelColorWithGamma(led, _setColor);
       }
       _pStrip->Show(); 
     }

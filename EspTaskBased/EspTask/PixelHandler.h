@@ -1,4 +1,4 @@
-
+#include "ParseNumbers.h"
 #include "IAnimation.h"
 #include "AnimationBlendTo.h"
 #include "AnimationAlternate.h"
@@ -51,10 +51,14 @@ class PixelHandler
     }
 
     bool ProcessMessage(const char* pMessage)
-    {
+    {        
+      ParseNumbers parseNumbers;
+      parseNumbers.Parse(pMessage);
+      //parseNumbers.Dump();
+      
       for (int i = 0; i < AnimationCount; i++)
       {
-        if (_pAnimations[i]->ProcessMessage(pMessage))
+        if (_pAnimations[i]->ProcessMessage(pMessage, &parseNumbers))
         {
           if (_pAnimations[i] != _pCurrentAnimation)
           {

@@ -17,35 +17,22 @@ class AnimationBlendTo: public IAnimation
         IAnimation(pString, pixelCount, "Blend")
         {}
 
-    bool ProcessMessage(const char* pMessage)
+    bool ProcessMessage(const char* pMessage, ParseNumbers* pParseNumbers)
     {
-      int red = 0;
-      int green = 0;
-      int blue = 0;
-      int count = 1;
-
       // rgb rrr,ggg,bbb,cccc
       if (*pMessage == 'r')
       {
         _lastMessage = pMessage;
-        
-        pMessage += 4;
-        red = atoi(pMessage);  
-        
-        pMessage += 4;
-        green = atoi(pMessage); 
-         
-        pMessage += 4;
-        blue = atoi(pMessage);         
-        
-        pMessage += 3;
-        if (*pMessage != 0)
+
+        if (pParseNumbers->_count < 3)
         {
-          pMessage++;
-          count = atoi(pMessage);
+          return false;
         }
 
-        DoBlend(RgbColor(red, green, blue), count);
+        RgbColor color = RgbColor(pParseNumbers->_values[0], pParseNumbers->_values[1], pParseNumbers->_values[2]);
+        int count = pParseNumbers->_values[3];
+
+        DoBlend(color, count);
         
         return true;
       }
@@ -82,7 +69,7 @@ class AnimationBlendTo: public IAnimation
 
       for (int led = 0; led < _pixelCount; led++)
       {
-        _pStrip->SetPixelColor(led, _setColor);
+        SetPixelColorWithGamma(led, _setColor);
       }
       _pStrip->Show(); 
     }
