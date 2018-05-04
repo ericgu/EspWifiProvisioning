@@ -5,6 +5,8 @@ class AnimationFlashDecay: public IAnimation
     float _hue;
     RgbColor _baseColor;
     int _stepsOn;
+    int _stepsWaitMin;
+    int _stepsWaitMax;
     int _stepsWait;
     int _currentStep = 0;
 
@@ -20,17 +22,11 @@ class AnimationFlashDecay: public IAnimation
     bool ProcessMessage(const char* pMessage, ParseNumbers* pParseNumbers)
     {
       // fdc cccc
-      if (*pMessage == 'f')
+      if (*pMessage == 'f' && pParseNumbers->_count == 3)
       {
-        _lastMessage = pMessage;
-
-        if (pParseNumbers->_count < 2)
-        {
-          return false;
-        }
-
         _stepsOn = pParseNumbers->_values[0];
-        _stepsWait = pParseNumbers->_values[0];
+        _stepsWaitMin = pParseNumbers->_values[1];
+        _stepsWaitMax = pParseNumbers->_values[2];
 
         return true;
       }
@@ -38,16 +34,19 @@ class AnimationFlashDecay: public IAnimation
       return false;
     }
 
-    void SetHue()
+    void Next()
     {
       _hue = ((float)ESP8266TrueRandom.random()) / 2147482647;
+      _stepsWait = _stepsWaitMin + ESP8266TrueRandom.random(_stepsWaitMax - _stepsWaitMin);
+      Serial.println(_hue);
+      Serial.println(_stepsWait);
     }
       
     HsbColor GetColor()
     {
       if (_currentStep == 0)
       {
-        SetHue();
+        Next();
       }
       
       _currentStep = (_currentStep + 1) % (_stepsOn + _stepsWait);
@@ -66,13 +65,9 @@ class AnimationFlashDecay: public IAnimation
 
     void Update()
     {
-      HsbColor _setColor = GetColor();
+      HsbColor color = GetColor();
 
-      for (int led = 0; led < _pixelCount; led++)
-      {
-        SetPixelColorWithGamma(led, _setColor);
-      }
-      _pStrip->Show(); 
+      SetAllPixelColorWithGammaAndShow(color);
     }
 };
 

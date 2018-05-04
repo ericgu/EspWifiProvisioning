@@ -16,16 +16,11 @@ class AnimationColorRotate: public IAnimation
 
     bool ProcessMessage(const char* pMessage, ParseNumbers* pParseNumbers)
     {
-      // crt cccc
-      if (*pMessage == 'c')
+      // crt cccc,bbbb
+      if (*pMessage == 'c' && pParseNumbers->_count == 2)
       {
-        _lastMessage = pMessage;
-        if (pParseNumbers->_count < 1)
-        {
-          return false;
-        }
-        
-        _steps = pParseNumbers->_values[0];  
+        _steps = pParseNumbers->_values[0];
+        _brightness = ((float)pParseNumbers->_values[1]) / 255;  
 
         return true;
       }
@@ -44,13 +39,9 @@ class AnimationColorRotate: public IAnimation
 
     void Update()
     {
-      RgbColor _setColor = GetColor();
+      RgbColor color = GetColor();
 
-      for (int led = 0; led < _pixelCount; led++)
-      {
-        SetPixelColorWithGamma(led, _setColor);
-      }
-      _pStrip->Show(); 
+      SetAllPixelColorWithGammaAndShow(color);
     }
 };
 

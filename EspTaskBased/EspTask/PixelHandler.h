@@ -13,6 +13,7 @@ class PixelHandler
     PersistentStorage* _pPersistentStorage;
     int _pixelCount;
     int _pixelPin;
+    String _lastMessage;
 
     const int AnimationCount = 5;
     IAnimation** _pAnimations;
@@ -63,6 +64,7 @@ class PixelHandler
           if (_pAnimations[i] != _pCurrentAnimation)
           {
             _pCurrentAnimation = _pAnimations[i];
+            _lastMessage = pMessage;
             Serial.print("Switched to: ");
             Serial.println(_pCurrentAnimation->getName());
             
@@ -73,17 +75,20 @@ class PixelHandler
 
       if (*pMessage == 's')   // save the last animation to flash
       {
-        if (_pCurrentAnimation->getLastMessage().length() < sizeof(_pPersistentStorage->_startingAnimation))
+        if (_lastMessage.length() < sizeof(_pPersistentStorage->_startingAnimation))
         {
-          _pCurrentAnimation->getLastMessage().toCharArray(_pPersistentStorage->_startingAnimation, sizeof(_pPersistentStorage->_startingAnimation));
+          _lastMessage.toCharArray(_pPersistentStorage->_startingAnimation, sizeof(_pPersistentStorage->_startingAnimation));
 
           Serial.println("Last message");
-          Serial.println(_pCurrentAnimation->getLastMessage());
+          Serial.println(_lastMessage);
           _pPersistentStorage->Save();
         }
       }
-
-      Serial.println(pMessage);
+      else
+      {
+        Serial.print("Unrecognized: ");
+        Serial.println(pMessage);
+      }
 
       return false;
     }

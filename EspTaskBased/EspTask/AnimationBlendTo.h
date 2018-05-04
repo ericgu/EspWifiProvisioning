@@ -20,15 +20,8 @@ class AnimationBlendTo: public IAnimation
     bool ProcessMessage(const char* pMessage, ParseNumbers* pParseNumbers)
     {
       // rgb rrr,ggg,bbb,cccc
-      if (*pMessage == 'r')
+      if (*pMessage == 'r' && pParseNumbers->_count == 4)
       {
-        _lastMessage = pMessage;
-
-        if (pParseNumbers->_count < 3)
-        {
-          return false;
-        }
-
         RgbColor color = RgbColor(pParseNumbers->_values[0], pParseNumbers->_values[1], pParseNumbers->_values[2]);
         int count = pParseNumbers->_values[3];
 
@@ -65,13 +58,9 @@ class AnimationBlendTo: public IAnimation
 
     void Update()
     {
-      RgbColor _setColor = GetColor();
+      RgbColor color = GetColor();
 
-      for (int led = 0; led < _pixelCount; led++)
-      {
-        SetPixelColorWithGamma(led, _setColor);
-      }
-      _pStrip->Show(); 
+      SetAllPixelColorWithGammaAndShow(color);
     }
 };
 

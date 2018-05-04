@@ -22,7 +22,6 @@ class IAnimation
     NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod>* _pStrip;
     int _pixelCount;
     String _name;
-    String _lastMessage;
   
   public: 
     IAnimation(NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod>* pStrip, int pixelCount, String name)
@@ -36,7 +35,6 @@ class IAnimation
     virtual void Update() = 0;
 
     String getName() { return _name; }
-    String getLastMessage() { return _lastMessage; }
 
     void SetPixelColorWithGamma(int pixelIndex, RgbColor color)
     {
@@ -47,6 +45,16 @@ class IAnimation
     void SetPixelColor(int pixelIndex, RgbColor color)
     {
       _pStrip->SetPixelColor(pixelIndex, color);  
+    }
+
+    void SetAllPixelColorWithGammaAndShow(RgbColor color)
+    {
+      RgbColor gammaCorrectedColor(gamma8[color.R], gamma8[color.G], gamma8[color.B]);
+      for (int led = 0; led < _pixelCount; led++)
+      {
+        _pStrip->SetPixelColor(led, gammaCorrectedColor);  
+      }
+      _pStrip->Show();
     }
 };
 
