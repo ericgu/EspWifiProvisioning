@@ -38,8 +38,8 @@ class AnimationFlashDecay: public IAnimation
     {
       _hue = ((float)ESP8266TrueRandom.random()) / 2147482647;
       _stepsWait = _stepsWaitMin + ESP8266TrueRandom.random(_stepsWaitMax - _stepsWaitMin);
-      Serial.println(_hue);
-      Serial.println(_stepsWait);
+      //Serial.println(_hue);
+      //Serial.println(_stepsWait);
     }
       
     HsbColor GetColor()

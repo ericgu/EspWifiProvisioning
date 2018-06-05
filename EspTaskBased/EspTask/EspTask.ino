@@ -30,12 +30,23 @@ TaskProcessMessages taskProcessMessages(LED_BUILTIN, MsToTaskTime(5), &pixelHand
 
 WebServer webServer;
 
-void setup() {
+#define NODE_TYPE_PRODUCTION 1
+#define NODE_TYPE_LOCAL_NET 2
+#define NODE_TYPE_AP_NET_FORGETFUL 3
+
+int nodeType = 2;
+
+DNSServer dnsServer;
+
+void setup() { 
   Serial.begin(115200);
   //Serial.setDebugOutput(true);
 
-  //strcpy(persistentStorage._ssid, "junkjunkjunk");  // set bad wifi params for testing...
-  //persistentStorage.Save();
+  if (nodeType == NODE_TYPE_AP_NET_FORGETFUL)
+  {
+    strcpy(persistentStorage._ssid, "junkjunkjunk");  // set bad wifi params for testing...
+    persistentStorage.Save();
+  }
   persistentStorage.Load();
   
   Serial.print("Starting: ");
@@ -46,13 +57,24 @@ void setup() {
   taskProcessMessages.Init();
 
   webServer.SetHandlers(&wifiHandler, &pixelHandler);
-  webServer.Init();
+  webServer.Init(); 
 
   taskManager.StartTask(&taskProcessMessages);
 
   wifiHandler.LoadConfiguration(&persistentStorage);
-  //wifiHandler.setParamsForDebug("ASUS", "Gunnerson", "EDP44");
-  wifiHandler.Init();
+  if (nodeType == NODE_TYPE_LOCAL_NET)
+  {
+    wifiHandler.setParamsForDebug("ASUS", "Gunnerson", "EDP44");
+  }
+  
+  if (nodeType == NODE_TYPE_AP_NET_FORGETFUL)
+  {
+    wifiHandler.SetSaveAfterProvisioning(false);
+  }
+
+  wifiHandler.loadNetworks();
+
+  //wifiHandler.Init();
 }
 
 void loop() {

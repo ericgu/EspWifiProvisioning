@@ -102,6 +102,20 @@ private:
       _pPixelHandler->Update();
     }
 
+    static void WifiStatusHandler(int status, void* userData)
+    {
+      TaskProcessMessages* pTaskProcessMessages = (TaskProcessMessages*) userData;
+
+      if (status == STATE_AP)
+      {
+        pTaskProcessMessages->_pPixelHandler->SetAccessPointAnimation();
+      }
+      else if (status == STATE_STA)
+      {
+        pTaskProcessMessages->_pPixelHandler->SetProvisionedAnimation();
+      }
+    }
+
     virtual void OnUpdate(uint32_t deltaTime)
     {
       UpdateHandleUdp();
@@ -110,6 +124,6 @@ private:
 
       UpdatePixelHandler();
  
-      _pWifiHandler->Init();
+      _pWifiHandler->Init(WifiStatusHandler, this);
     }     
 };

@@ -39,16 +39,35 @@ class PixelHandler
       _pAnimations[3] = new AnimationColorRotate(_pStrip, _pixelCount);
       _pAnimations[4] = new AnimationFlashDecay(_pStrip, _pixelCount);
 
+      SetUnconnectedAnimation();
+
+
+
+      _pCurrentAnimation->Update();
+    }
+
+    void SetUnconnectedAnimation()
+    {
+      Serial.println("Red alternate");
+      ProcessMessage("alt 100,000,000,000,000,000,250");
+    }
+
+    void SetAccessPointAnimation()
+    {
+      Serial.println("Yellow alternate");
+      ProcessMessage("alt 150,150,000,000,000,000,250");
+    }
+
+    void SetProvisionedAnimation()
+    {
       Serial.print("Attempting restart using: ");
       Serial.println(_pPersistentStorage->_startingAnimation);
       bool lastAnimationRestarted = ProcessMessage(_pPersistentStorage->_startingAnimation);
       if (!lastAnimationRestarted)
       {
-        Serial.println("Fallback to red flash");
-        ProcessMessage("alt 032,000,000,000,000,000,250");
+        Serial.println("Green alternate");
+        ProcessMessage("alt 0,150,000,000,000,000,250");
       }
-
-      _pCurrentAnimation->Update();
     }
 
     bool ProcessMessage(const char* pMessage)
@@ -67,9 +86,9 @@ class PixelHandler
             _lastMessage = pMessage;
             Serial.print("Switched to: ");
             Serial.println(_pCurrentAnimation->getName());
-            
-            return true;
           }
+            
+          return true;
         }
       }
 
