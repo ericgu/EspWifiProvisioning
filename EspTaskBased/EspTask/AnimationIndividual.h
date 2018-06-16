@@ -7,10 +7,10 @@ class AnimationIndividual: public IAnimation
  
   public: 
 
-    AnimationIndividual(NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod>* pString, int pixelCount) : 
-        IAnimation(pString, pixelCount, "Individual pixels")
+    AnimationIndividual(NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod>** ppStrip) : 
+        IAnimation(ppStrip, "Individual pixels")
     {
-      _pColors = new RgbColor[pixelCount];      
+      _pColors = new RgbColor[GetPixelCount()];      
     }
 
     int GetHexCharacter(const char ch)
@@ -47,7 +47,7 @@ class AnimationIndividual: public IAnimation
         // two hex bytes for color of each led
 
         RgbColor* pColor = _pColors;
-        for (int led = 0; led < _pixelCount; led += blockSize)
+        for (int led = 0; led < GetPixelCount(); led += blockSize)
         {
           RgbColor rgbColor = GetRgbColorFromBytes(pMessage);
           pMessage += 6;
@@ -73,12 +73,12 @@ class AnimationIndividual: public IAnimation
       {
         RgbColor* pColor = _pColors;
 
-        for (int led = 0; led < _pixelCount; led++)
+        for (int led = 0; led < GetPixelCount(); led++)
         {
           SetPixelColor(led, *pColor);
           pColor++;
         }
-        _pStrip->Show(); 
+        (*_ppStrip)->Show(); 
         
         _rendered = true;
       }

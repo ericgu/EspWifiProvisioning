@@ -10,6 +10,7 @@ class PersistentStorage
     char _password[65];
     char _hostName[33];
     char _startingAnimation[128];
+    char _ledCount;
 
     PersistentStorage()
     {
@@ -46,11 +47,17 @@ class PersistentStorage
       }      
       EEPROM.get(0, this);    
 
+      if (_ledCount == 0)
+      {
+        _ledCount = 33;
+      }
+
       Serial.println("Loaded configuration");
       Serial.println(_hostName);
       Serial.println(_ssid);
       Serial.println(_password);
       Serial.println(_startingAnimation);
+      Serial.println(_ledCount);
     }
 
     void SsidSet(String ssid)

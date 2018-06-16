@@ -13,8 +13,8 @@ class AnimationBlendTo: public IAnimation
   
   public: 
 
-    AnimationBlendTo(NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod>* pString, int pixelCount) : 
-        IAnimation(pString, pixelCount, "Blend")
+    AnimationBlendTo(NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod>** ppStrip) : 
+        IAnimation(ppStrip, "Blend")
         {}
 
     bool ProcessMessage(const char* pMessage, ParseNumbers* pParseNumbers)

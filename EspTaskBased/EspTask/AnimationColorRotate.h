@@ -10,8 +10,8 @@ class AnimationColorRotate: public IAnimation
   
   public: 
 
-    AnimationColorRotate(NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod>* pString, int pixelCount) : 
-        IAnimation(pString, pixelCount, "Color rotate")
+    AnimationColorRotate(NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod>** ppStrip) : 
+        IAnimation(ppStrip, "Color rotate")
         {}
 
     bool ProcessMessage(const char* pMessage, ParseNumbers* pParseNumbers)

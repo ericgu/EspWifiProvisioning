@@ -32,6 +32,36 @@ class WifiHandler
     {
     }
 
+    String LocalIp()
+    {
+      IPAddress ip = WiFi.localIP();
+
+      String result;
+      result += ip[0];
+      for (int i = 1; i < 4; i++)
+      {
+        result += ".";
+        result += ip[i];
+      }
+
+      return result;
+    }
+
+    String GetStatus()
+    {
+      switch (_wifiState)
+      {
+        case STATE_AP:
+          return "Access Point Mode: waiting to provision";
+
+        case STATE_STA:
+          return String("Connected: ") + _pConfiguration->_ssid + " (" + LocalIp() + ")";
+
+        default:
+          return "Unknown";
+      }
+    }
+
     void SetSaveAfterProvisioning(bool saveAfterProvisioning)
     {
       _saveAfterProvisioning = saveAfterProvisioning;

@@ -19,10 +19,9 @@ extern "C" {
 
 PersistentStorage persistentStorage;
 
-const uint16_t PixelCount = 33; // this example assumes 4 pixels, making it smaller will cause a failure
 const uint8_t PixelPin = 2;  // make sure to set this to the correct pin, ignored for Esp8266
 
-PixelHandler pixelHandler(&persistentStorage, PixelCount, PixelPin);
+PixelHandler pixelHandler(&persistentStorage, PixelPin);
 WifiHandler wifiHandler;
 TaskManager taskManager;
 

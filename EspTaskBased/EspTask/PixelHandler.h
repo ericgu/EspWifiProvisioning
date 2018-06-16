@@ -1,4 +1,5 @@
 #include "ParseNumbers.h"
+
 #include "IAnimation.h"
 #include "AnimationBlendTo.h"
 #include "AnimationAlternate.h"
@@ -11,37 +12,84 @@ class PixelHandler
   private:
     NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod>* _pStrip;
     PersistentStorage* _pPersistentStorage;
-    int _pixelCount;
     int _pixelPin;
     String _lastMessage;
 
     const int AnimationCount = 5;
     IAnimation** _pAnimations;
     IAnimation* _pCurrentAnimation;
-   
+    bool _pixelCountUpdated;
+
   public:
-    PixelHandler(PersistentStorage* pPersistentStorage, int pixelCount, int pixelPin) : 
+    PixelHandler(PersistentStorage* pPersistentStorage, int pixelPin) : 
         _pPersistentStorage(pPersistentStorage),
-        _pixelCount(pixelCount),
         _pixelPin(pixelPin)
     { 
-    };
+      _pStrip = 0;
+      _pixelCountUpdated = false;
+    }
+
+    NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod>* GetStrip()
+    {
+      return _pStrip;
+    }
+
+    int GetPixelCount()
+    {
+      return _pPersistentStorage->_ledCount;
+    }
+
+    void CreateAnimations()
+    {
+      _pAnimations = new IAnimation*[AnimationCount];
+
+      _pAnimations[0] = new AnimationBlendTo(&_pStrip);
+      _pAnimations[1] = new AnimationAlternate(&_pStrip);
+      _pAnimations[2] = new AnimationIndividual(&_pStrip);
+      _pAnimations[3] = new AnimationColorRotate(&_pStrip);
+      _pAnimations[4] = new AnimationFlashDecay(&_pStrip);
+    }
+
+    void ClearStrip()
+    {
+      RgbColor black(0, 0, 0);
+      for (int led = 0; led < GetPixelCount(); led++)
+      {
+        Serial.println(led);
+        _pStrip->SetPixelColor(led, black);  
+      }
+      _pStrip->Show();
+    }
+
+    void InitStrip()
+    {
+      Serial.println("A");
+      if (_pStrip != 0)
+      {
+      Serial.println("B");
+        RgbColor black(0, 0, 0);
+        for (int led = 0; led < GetPixelCount(); led++)
+        {
+          Serial.println(led);
+          _pStrip->SetPixelColor(led, black);  
+        }
+
+      Serial.println("C");
+        delete _pStrip;
+      }
+      Serial.println("D");
+      _pStrip = new NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod>(_pPersistentStorage->_ledCount, _pixelPin);
+      Serial.println("E");
+      _pStrip->Begin();
+      Serial.println("F");
+    }
 
     void Init()
     {
-      _pStrip = new NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod>(_pixelCount, _pixelPin);
-      _pStrip->Begin();
-
-      _pAnimations = new IAnimation*[AnimationCount];
-      _pAnimations[0] = new AnimationBlendTo(_pStrip, _pixelCount);
-      _pAnimations[1] = new AnimationAlternate(_pStrip, _pixelCount);
-      _pAnimations[2] = new AnimationIndividual(_pStrip, _pixelCount);
-      _pAnimations[3] = new AnimationColorRotate(_pStrip, _pixelCount);
-      _pAnimations[4] = new AnimationFlashDecay(_pStrip, _pixelCount);
+      InitStrip();
+      CreateAnimations();
 
       SetUnconnectedAnimation();
-
-
 
       _pCurrentAnimation->Update();
     }
@@ -103,6 +151,16 @@ class PixelHandler
           _pPersistentStorage->Save();
         }
       }
+      else if (*pMessage == 'n') // set number of leds
+      {
+        parseNumbers.Dump();
+
+        _pPersistentStorage->_ledCount = parseNumbers._values[0];
+        _pixelCountUpdated = true;
+        _pPersistentStorage->Save();
+        ClearStrip();
+        ESP.restart();
+      }
       else
       {
         Serial.print("Unrecognized: ");
@@ -114,6 +172,14 @@ class PixelHandler
 
     void Update()
     {
+      if (_pixelCountUpdated)
+      {
+        Serial.println("> new pixel count");
+        _pixelCountUpdated = false;
+        InitStrip();
+        Serial.println("< new pixel count");
+      }
+      
       _pCurrentAnimation->Update();
     }
 };

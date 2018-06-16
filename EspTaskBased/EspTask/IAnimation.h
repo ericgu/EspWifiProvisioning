@@ -19,15 +19,13 @@ const uint8_t gamma8[] = {
 class IAnimation
 {
   protected:
-    NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod>* _pStrip;
-    int _pixelCount;
+    NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod>** _ppStrip;
     String _name;
   
   public: 
-    IAnimation(NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod>* pStrip, int pixelCount, String name)
+    IAnimation(NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod>** ppStrip, String name)
     {
-      _pStrip = pStrip;
-      _pixelCount = pixelCount;
+      _ppStrip = ppStrip;
       _name = name;
     }
 
@@ -36,25 +34,30 @@ class IAnimation
 
     String getName() { return _name; }
 
+    int GetPixelCount()
+    {
+      return (*_ppStrip)->PixelCount();
+    }
+
     void SetPixelColorWithGamma(int pixelIndex, RgbColor color)
     {
       RgbColor gammaCorrectedColor(gamma8[color.R], gamma8[color.G], gamma8[color.B]);
-      _pStrip->SetPixelColor(pixelIndex, gammaCorrectedColor);  
+      (*_ppStrip)->SetPixelColor(pixelIndex, gammaCorrectedColor);  
     }
 
     void SetPixelColor(int pixelIndex, RgbColor color)
     {
-      _pStrip->SetPixelColor(pixelIndex, color);  
+      (*_ppStrip)->SetPixelColor(pixelIndex, color);  
     }
 
     void SetAllPixelColorWithGammaAndShow(RgbColor color)
     {
       RgbColor gammaCorrectedColor(gamma8[color.R], gamma8[color.G], gamma8[color.B]);
-      for (int led = 0; led < _pixelCount; led++)
+      for (int led = 0; led < GetPixelCount(); led++)
       {
-        _pStrip->SetPixelColor(led, gammaCorrectedColor);  
+        (*_ppStrip)->SetPixelColor(led, gammaCorrectedColor);  
       }
-      _pStrip->Show();
+      (*_ppStrip)->Show();
     }
 };
 

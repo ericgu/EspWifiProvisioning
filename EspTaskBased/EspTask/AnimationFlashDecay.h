@@ -15,8 +15,8 @@ class AnimationFlashDecay: public IAnimation
   
   public: 
 
-    AnimationFlashDecay(NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod>* pString, int pixelCount) : 
-        IAnimation(pString, pixelCount, "Flash decay")
+    AnimationFlashDecay(NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod>** ppStrip) : 
+        IAnimation(ppStrip, "Flash decay")
         {}
 
     bool ProcessMessage(const char* pMessage, ParseNumbers* pParseNumbers)

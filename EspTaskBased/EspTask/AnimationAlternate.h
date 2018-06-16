@@ -8,8 +8,8 @@ class AnimationAlternate: public IAnimation
  
   public: 
 
-    AnimationAlternate(NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod>* pString, int pixelCount) : 
-        IAnimation(pString, pixelCount, "Alternate")
+    AnimationAlternate(NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod>** ppStrip) : 
+        IAnimation(ppStrip, "Alternate")
         {}
 
     // alt rrr,ggg,bbb,rrr,ggg,bbb,cccc
