@@ -16,8 +16,8 @@ class AnimationColorRotate: public IAnimation
 
     bool ProcessMessage(const char* pMessage, ParseNumbers* pParseNumbers)
     {
-      // crt cccc,bbbb
-      if (*pMessage == 'c' && pParseNumbers->_count == 2)
+      // col cccc,bbbb
+      if (IsMatch(pMessage, pParseNumbers, "col", 2))
       {
         _steps = pParseNumbers->_values[0];
         _brightness = ((float)pParseNumbers->_values[1]) / 255;  

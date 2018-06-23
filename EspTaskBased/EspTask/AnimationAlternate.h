@@ -16,7 +16,7 @@ class AnimationAlternate: public IAnimation
     //      (first)       (second)  (count)
     bool ProcessMessage(const char* pMessage, ParseNumbers* pParseNumbers)
     {
-      if (*pMessage == 'a' && pParseNumbers->_count == 7)
+      if (IsMatch(pMessage, pParseNumbers, "alt", 7))
       {
         _firstColor = RgbColor(pParseNumbers->_values[0], pParseNumbers->_values[1], pParseNumbers->_values[2]);
         _secondColor = RgbColor(pParseNumbers->_values[3], pParseNumbers->_values[4], pParseNumbers->_values[5]);

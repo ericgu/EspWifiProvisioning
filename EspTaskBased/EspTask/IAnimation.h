@@ -59,5 +59,10 @@ class IAnimation
       }
       (*_ppStrip)->Show();
     }
+
+    bool IsMatch(const char* pMessage, ParseNumbers* pParseNumbers, const char* pMatch, int numbers)
+    {
+      return strstr(pMessage, pMatch) == pMessage && pParseNumbers->_count == numbers;
+    }
 };
 

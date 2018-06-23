@@ -20,7 +20,7 @@ class AnimationBlendTo: public IAnimation
     bool ProcessMessage(const char* pMessage, ParseNumbers* pParseNumbers)
     {
       // rgb rrr,ggg,bbb,cccc
-      if (*pMessage == 'r' && pParseNumbers->_count == 4)
+      if (IsMatch(pMessage, pParseNumbers, "rgb", 4))
       {
         RgbColor color = RgbColor(pParseNumbers->_values[0], pParseNumbers->_values[1], pParseNumbers->_values[2]);
         int count = pParseNumbers->_values[3];

@@ -22,7 +22,7 @@ class AnimationFlashDecay: public IAnimation
     bool ProcessMessage(const char* pMessage, ParseNumbers* pParseNumbers)
     {
       // fdc cccc
-      if (*pMessage == 'f' && pParseNumbers->_count == 3)
+      if (IsMatch(pMessage, pParseNumbers, "fdc", 3))
       {
         _stepsOn = pParseNumbers->_values[0];
         _stepsWaitMin = pParseNumbers->_values[1];
