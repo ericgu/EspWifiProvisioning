@@ -70,7 +70,7 @@ private:
         }
         _packetCount++;
 
-        _pPixelHandler->ProcessMessage(_buffer);
+        _pPixelHandler->ProcessMessage(_buffer, false);
       }
       else
       {

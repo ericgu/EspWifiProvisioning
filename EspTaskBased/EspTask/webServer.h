@@ -9,6 +9,7 @@ class WebServer
     AsyncWebServer* _pServer;
     WifiHandler* _pWifiHandler;
     PixelHandler* _pPixelHandler;
+    bool _singleMode;
 
     static constexpr char* _codeVersionNumber = "V1.0";
 
@@ -29,7 +30,15 @@ class WebServer
       pRequest->send(200, "text/plain", info.c_str());
     }
 
-    static void OnMainPage(AsyncWebServerRequest* pRequest) {
+    static void OnToggleMode(AsyncWebServerRequest* pRequest)
+    {
+      _pWebServer->_singleMode = _pWebServer->_singleMode == 0 ? 1 : 0;
+
+      pRequest->redirect("/");
+    }
+
+    static void OnMainPage(AsyncWebServerRequest* pRequest)
+    {
       Serial.println("> MainPage");
 
       if (pRequest->hasArg("ssid"))
@@ -67,20 +76,25 @@ class WebServer
 
         response += MainPageHtml3;
 
-        response += "<table>";
-
-        for (int intensity = 255; intensity > 100; intensity -= 40)
-        {
-          response += "<tr>";
-
-          response += GetTableRow(intensity);
-
-          response += "</tr>";
-        }
-            
-        response += "</table>";
         
         response += MainPageHtml4;
+
+        response += "<p>";
+        
+        if (_pWebServer->_singleMode)
+        {
+          response += "<b>Mode: Single Mode</b>";
+        }
+        else
+        {
+          response += "<b>Mode: Recording Mode </b>";
+        }
+
+        response += "&nbsp;&nbsp;<a href=\"/ToggleMode\">Toggle</a></p>";
+
+        response += GetTable();
+
+        response += MainPageHtml5;
         pRequest->send(200, "text/html", response);
       }
 
@@ -118,7 +132,12 @@ class WebServer
       cell += ",";
       cell += GetIntValue(blue);
 
-      cell += ",100\">&nbsp;&nbsp;&nbsp;&nbsp;</a></td>";
+      cell += ",100";
+      if (!_pWebServer->_singleMode)
+      {
+        cell += "&period=500";
+      }
+      cell += "\">&nbsp;&nbsp;&nbsp;&nbsp;</a></td>";
 
       return cell;
     }
@@ -137,6 +156,27 @@ class WebServer
       row += GetTableCell(0, intensity, intensity);
       
       return row;
+    }
+
+    static String GetTable()
+    {
+      String response;
+      Serial.println("Table");
+      
+      response += "<table>";
+
+      for (int intensity = 255; intensity > 100; intensity -= 40)
+      {
+        response += "<tr>";
+
+        response += GetTableRow(intensity);
+
+        response += "</tr>";
+      }
+            
+      response += "</table>";
+
+      return response;
     }
 
     static void OnProvision(AsyncWebServerRequest* pRequest) 
@@ -175,7 +215,13 @@ class WebServer
 
         Serial.print("content: "); Serial.println(content);
 
-        _pWebServer->_pPixelHandler->ProcessMessage(content.c_str());
+        int period = -1;
+        if (pRequest->hasArg("period"))
+        {
+          period = atoi(pRequest->arg("period").c_str());
+        }
+
+        _pWebServer->_pPixelHandler->ProcessMessage(content.c_str(), period);
       }      
     }
 
@@ -189,11 +235,13 @@ class WebServer
     void Init()
     {
       _pWebServer = this;
+      _singleMode = true;
       
       _pServer = new AsyncWebServer(80);
 
       _pServer->onNotFound(OnNotFound);
       _pServer->on("/", OnMainPage);
+      _pServer->on("/ToggleMode", OnToggleMode);
       _pServer->on("/info", OnInfo);
       _pServer->on("/provision", OnProvision);
       _pServer->on("/message", OnMessage);

@@ -36,15 +36,19 @@ const char* MainPageHtml3 = R"-----(
 </form>
 
 <h1>Control</h1>
-
-<a href="http://www.riderx.info/provisioning-and-using-the-esp8266-controller/">Command Documentation</a>
-
-<h2>Direct colors</h2>
-
-<p><b>Note</b> that bright colors may overheat your esp controller or not be full brightness if you are powering through USB. </p>
 )-----";
 
 const char* MainPageHtml4 = R"-----(
+
+<a href="http://www.riderx.info/provisioning-and-using-the-esp8266-controller/">Command Documentation</a>
+
+<h2>Direct colors (single) - Direct colors (series)</h2>
+
+<p><b>Note</b> that bright colors may overheat your esp controller or not be full brightness if you are powering through USB. Single colors will
+set a single color; series will add the color to the current animation series.</p>
+)-----";
+
+const char* MainPageHtml5 = R"-----(
 
 <h2>Examples</h2>
 
@@ -69,12 +73,21 @@ const char* MainPageHtml4 = R"-----(
 <h3>Change LED count to 10 (will reboot!)</h3>
 <a href="/message?r=1&content=nx10">nx10</a>
 
-<h2>Custom command</h2>
+<h2>Custom command (single)</h2>
 <form action="/message">
     <input type="hidden" name="r" value="1"/>
     Content: <input type="text" name="content" />&nbsp;&nbsp;
     <input type="submit" value="Execute"/>
 </form>
+
+<h2>Custom command (series)</h2>
+<form action="/message">
+    <input type="hidden" name="r" value="1"/>
+    Content: <input type="text" name="content" />&nbsp;&nbsp;    
+    Period: <input type="text" name="period" />&nbsp;&nbsp;
+    <input type="submit" value="Execute"/>
+</form>
+<h2>&nbsp;</h2>
 
 </body>
 </html>

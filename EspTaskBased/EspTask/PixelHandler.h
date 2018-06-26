@@ -1,5 +1,7 @@
 #include "ParseNumbers.h"
 
+#include "AnimationSegment.h"
+
 #include "IAnimation.h"
 #include "AnimationBlendTo.h"
 #include "AnimationAlternate.h"
@@ -19,6 +21,7 @@ class PixelHandler
     IAnimation** _pAnimations;
     IAnimation* _pCurrentAnimation;
     bool _pixelCountUpdated;
+    AnimationSegments _animationSegments;
 
   public:
     PixelHandler(PersistentStorage* pPersistentStorage, int pixelPin) : 
@@ -55,7 +58,6 @@ class PixelHandler
       RgbColor black(0, 0, 0);
       for (int led = 0; led < GetPixelCount(); led++)
       {
-        Serial.println(led);
         _pStrip->SetPixelColor(led, black);  
       }
       _pStrip->Show();
@@ -63,25 +65,8 @@ class PixelHandler
 
     void InitStrip()
     {
-      Serial.println("A");
-      if (_pStrip != 0)
-      {
-      Serial.println("B");
-        RgbColor black(0, 0, 0);
-        for (int led = 0; led < GetPixelCount(); led++)
-        {
-          Serial.println(led);
-          _pStrip->SetPixelColor(led, black);  
-        }
-
-      Serial.println("C");
-        delete _pStrip;
-      }
-      Serial.println("D");
       _pStrip = new NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod>(_pPersistentStorage->_ledCount, _pixelPin);
-      Serial.println("E");
       _pStrip->Begin();
-      Serial.println("F");
     }
 
     void Init()
@@ -91,34 +76,64 @@ class PixelHandler
 
       SetUnconnectedAnimation();
 
-      _pCurrentAnimation->Update();
+      //_pCurrentAnimation->Update();
     }
 
     void SetUnconnectedAnimation()
     {
       Serial.println("Red alternate");
-      ProcessMessage("alt 100,000,000,000,000,000,250");
+      ProcessMessage("alt 100,000,000,000,000,000,250", -1);
     }
 
     void SetAccessPointAnimation()
     {
       Serial.println("Yellow alternate");
-      ProcessMessage("alt 150,150,000,000,000,000,250");
+      ProcessMessage("alt 150,150,000,000,000,000,250", -1);
     }
 
     void SetProvisionedAnimation()
     {
       Serial.print("Attempting restart using: ");
-      Serial.println(_pPersistentStorage->_startingAnimation);
-      bool lastAnimationRestarted = ProcessMessage(_pPersistentStorage->_startingAnimation);
+      Serial.println(_pPersistentStorage->_storedAnimation);
+      bool lastAnimationRestarted = ProcessMessage(_pPersistentStorage->_storedAnimation, -1);
       if (!lastAnimationRestarted)
       {
         Serial.println("Green alternate");
-        ProcessMessage("alt 0,150,000,000,000,000,250");
+        ProcessMessage("alt 0,150,000,000,000,000,250", -1);
       }
     }
 
-    bool ProcessMessage(const char* pMessage)
+    bool ProcessMessage(const char* pMessage, int period)
+    {
+      ParseNumbers parseNumbers;
+      parseNumbers.Parse(pMessage);
+      
+      if (*pMessage == 's')   // save the last animation to flash
+      {
+        if (_lastMessage.length() < sizeof(_pPersistentStorage->_storedAnimation))
+        {
+          _lastMessage.toCharArray(_pPersistentStorage->_storedAnimation, sizeof(_pPersistentStorage->_storedAnimation));
+
+          Serial.println("Last message");
+          Serial.println(_lastMessage);
+          _pPersistentStorage->Save();
+        }
+      }
+      else if (*pMessage == 'n') // set number of leds
+      {
+        _pPersistentStorage->_ledCount = parseNumbers._values[0];
+        _pixelCountUpdated = true;
+        _pPersistentStorage->Save();
+        ClearStrip();
+        ESP.restart();
+      }
+      else
+      {
+        _animationSegments.Add(pMessage, period);
+      }
+    }
+
+    bool ProcessMessageInt(const char* pMessage)
     {        
       ParseNumbers parseNumbers;
       parseNumbers.Parse(pMessage);
@@ -140,44 +155,20 @@ class PixelHandler
         }
       }
 
-      if (*pMessage == 's')   // save the last animation to flash
-      {
-        if (_lastMessage.length() < sizeof(_pPersistentStorage->_startingAnimation))
-        {
-          _lastMessage.toCharArray(_pPersistentStorage->_startingAnimation, sizeof(_pPersistentStorage->_startingAnimation));
-
-          Serial.println("Last message");
-          Serial.println(_lastMessage);
-          _pPersistentStorage->Save();
-        }
-      }
-      else if (*pMessage == 'n') // set number of leds
-      {
-        parseNumbers.Dump();
-
-        _pPersistentStorage->_ledCount = parseNumbers._values[0];
-        _pixelCountUpdated = true;
-        _pPersistentStorage->Save();
-        ClearStrip();
-        ESP.restart();
-      }
-      else
-      {
-        Serial.print("Unrecognized: ");
-        Serial.println(pMessage);
-      }
+      Serial.print("Unrecognized: ");
+      Serial.println(pMessage);
 
       return false;
     }
 
     void Update()
     {
-      if (_pixelCountUpdated)
+      String message = _animationSegments.GetNextMessage();
+      if (message.length() != 0)
       {
-        Serial.println("> new pixel count");
-        _pixelCountUpdated = false;
-        InitStrip();
-        Serial.println("< new pixel count");
+        Serial.print("Updated to: ");
+        Serial.println(message);
+        ProcessMessageInt(message.c_str());
       }
       
       _pCurrentAnimation->Update();

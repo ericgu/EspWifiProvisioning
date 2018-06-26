@@ -25,7 +25,7 @@ PixelHandler pixelHandler(&persistentStorage, PixelPin);
 WifiHandler wifiHandler;
 TaskManager taskManager;
 
-TaskProcessMessages taskProcessMessages(LED_BUILTIN, MsToTaskTime(5), &pixelHandler, &wifiHandler);
+TaskProcessMessages taskProcessMessages(LED_BUILTIN, MsToTaskTime(10), &pixelHandler, &wifiHandler);
 
 WebServer webServer;
 
@@ -74,6 +74,8 @@ void setup() {
   wifiHandler.loadNetworks();
 
   //wifiHandler.Init();
+
+  Serial.println(sizeof(PersistentStorage));
 }
 
 void loop() {

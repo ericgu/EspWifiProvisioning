@@ -9,8 +9,8 @@ class PersistentStorage
     char _ssid[33];
     char _password[65];
     char _hostName[33];
-    char _startingAnimation[128];
     char _ledCount;
+    char _storedAnimation[3956];
 
     PersistentStorage()
     {
@@ -56,7 +56,7 @@ class PersistentStorage
       Serial.println(_hostName);
       Serial.println(_ssid);
       Serial.println(_password);
-      Serial.println(_startingAnimation);
+      Serial.println(_storedAnimation);
       Serial.println(_ledCount);
     }
 
