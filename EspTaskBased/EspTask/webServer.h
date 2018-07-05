@@ -10,6 +10,7 @@ class WebServer
     WifiHandler* _pWifiHandler;
     PixelHandler* _pPixelHandler;
     bool _singleMode;
+    String _colorTableHtml;
 
     static constexpr char* _codeVersionNumber = "V1.0";
 
@@ -18,7 +19,7 @@ class WebServer
       Serial.println("not found");
       Serial.println(pRequest->url().c_str());
 
-      pRequest->send(200, "text/plain", "<h1>Hello</h1>");
+       pRequest->redirect("http://192.168.4.1/");
     }
 
     static void OnInfo(AsyncWebServerRequest* pRequest)
@@ -56,16 +57,19 @@ class WebServer
       {
         String response = MainPageHtml1;
 
+        Serial.println("A1");
         response += "<b>Status: </b>";
         response += _pWebServer->_pWifiHandler->GetStatus();
         response += "</br>";
         
+        Serial.println("A2");
         response += "<b>LEDs: </b>";
         response += _pWebServer->_pPixelHandler->GetPixelCount();
         response += "</br>";
         
         response += MainPageHtml2;
 
+        Serial.println("A3");
         Networks networks = _pWebServer->_pWifiHandler->getNetworks();
 
         for (int i = 0; i < networks.count; i += 2)
@@ -75,9 +79,8 @@ class WebServer
         }
 
         response += MainPageHtml3;
-
-        
         response += MainPageHtml4;
+        Serial.println("A4");
 
         response += "<p>";
         
@@ -89,12 +92,15 @@ class WebServer
         {
           response += "<b>Mode: Recording Mode </b>";
         }
+        Serial.println("A5");
 
         response += "&nbsp;&nbsp;<a href=\"/ToggleMode\">Toggle</a></p>";
 
-        response += GetTable();
+        response += _pWebServer->_colorTableHtml;
+        Serial.println("A6");
 
         response += MainPageHtml5;
+        Serial.println("A7");
         pRequest->send(200, "text/html", response);
       }
 
@@ -161,11 +167,10 @@ class WebServer
     static String GetTable()
     {
       String response;
-      Serial.println("Table");
       
       response += "<table>";
 
-      for (int intensity = 255; intensity > 100; intensity -= 40)
+      for (int intensity = 255; intensity > 100; intensity -= 80)
       {
         response += "<tr>";
 
@@ -236,6 +241,7 @@ class WebServer
     {
       _pWebServer = this;
       _singleMode = true;
+      _colorTableHtml = GetTable();
       
       _pServer = new AsyncWebServer(80);
 

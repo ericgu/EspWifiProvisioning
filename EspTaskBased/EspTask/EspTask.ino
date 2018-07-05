@@ -33,7 +33,7 @@ WebServer webServer;
 #define NODE_TYPE_LOCAL_NET 2
 #define NODE_TYPE_AP_NET_FORGETFUL 3
 
-int nodeType = 2;
+int nodeType = 1;
 
 DNSServer dnsServer;
 
@@ -44,6 +44,7 @@ void setup() {
   if (nodeType == NODE_TYPE_AP_NET_FORGETFUL)
   {
     strcpy(persistentStorage._ssid, "junkjunkjunk");  // set bad wifi params for testing...
+    strcpy(persistentStorage._storedAnimation, "invalid");  // set bad animation. 
     persistentStorage.Save();
   }
   persistentStorage.Load();
@@ -74,8 +75,6 @@ void setup() {
   wifiHandler.loadNetworks();
 
   //wifiHandler.Init();
-
-  Serial.println(sizeof(PersistentStorage));
 }
 
 void loop() {

@@ -95,15 +95,15 @@ class PixelHandler
     {
       Serial.print("Attempting restart using: ");
       Serial.println(_pPersistentStorage->_storedAnimation);
-      bool lastAnimationRestarted = ProcessMessage(_pPersistentStorage->_storedAnimation, -1);
-      if (!lastAnimationRestarted)
-      {
-        Serial.println("Green alternate");
-        ProcessMessage("alt 0,150,000,000,000,000,250", -1);
-      }
+      ProcessMessage(_pPersistentStorage->_storedAnimation, -1);
+      //if (!lastAnimationRestarted)
+      //{
+      //  Serial.println("Green alternate");
+      //  ProcessMessage("alt 0,150,000,000,000,000,250", -1);
+      //}
     }
 
-    bool ProcessMessage(const char* pMessage, int period)
+    void ProcessMessage(const char* pMessage, int period)
     {
       ParseNumbers parseNumbers;
       parseNumbers.Parse(pMessage);

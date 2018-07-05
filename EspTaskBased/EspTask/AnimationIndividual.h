@@ -33,7 +33,7 @@ class AnimationIndividual: public IAnimation
     // block size (number for each color), followed by 2 digit Hex color value
     bool ProcessMessage(const char* pMessage, ParseNumbers* pParseNumbers)
     {
-      if (*pMessage == 'i') // individual with specified chunk size.
+      if (strstr(pMessage, "ind") == pMessage) // individual with specified chunk size.
       {
         pMessage = ParseNumbers::SkipToFirstDigit(pMessage);
 
