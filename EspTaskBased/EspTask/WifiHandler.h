@@ -14,7 +14,7 @@ class WifiHandler
 {
   private:
     PersistentStorage* _pConfiguration;
-    int _wifiState; 
+    int _wifiState = STATE_UNKNOWN;
     int _lastWifiState = -1;
     bool _provisionOtherNodes = false;
     bool _saveAfterProvisioning = true;
@@ -70,7 +70,10 @@ class WifiHandler
     void LoadConfiguration(PersistentStorage* pPersistentStorage)
     {
       _pConfiguration = pPersistentStorage;
-      _wifiState = STATE_STARTING_STA;
+      if (_pConfiguration->SsidGet().length() != 0)
+      {
+        _wifiState = STATE_STARTING_STA;
+      }
     }
 
     void setParamsForDebug(String ssid, String password, String hostname)
@@ -310,7 +313,7 @@ class WifiHandler
     void loadNetworks()
     {
       int n = WiFi.scanNetworks();
-      Serial.print("networks: ");
+      Serial.print("Found networks: ");
       Serial.println(n);
 
       _networks.count = n * 2;

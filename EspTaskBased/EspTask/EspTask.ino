@@ -20,6 +20,7 @@ extern "C" {
 PersistentStorage persistentStorage;
 
 const uint8_t PixelPin = 2;  // make sure to set this to the correct pin, ignored for Esp8266
+const char* Version = "1.1";
 
 PixelHandler pixelHandler(&persistentStorage, PixelPin);
 WifiHandler wifiHandler;
@@ -39,6 +40,8 @@ DNSServer dnsServer;
 
 void setup() { 
   Serial.begin(115200);
+  Serial.print("EagleDecorations Controller Version ");
+  Serial.println(Version);
   //Serial.setDebugOutput(true);
 
   if (nodeType == NODE_TYPE_AP_NET_FORGETFUL)

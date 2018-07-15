@@ -19,7 +19,8 @@ class WebServer
       Serial.println("not found");
       Serial.println(pRequest->url().c_str());
 
-       pRequest->redirect("http://192.168.4.1/");
+      //pRequest->send(200, "text/html", "<html><body><html>Not found</html></body></html>");
+       pRequest->redirect("http://192.168.4.1/Provision");
     }
 
     static void OnInfo(AsyncWebServerRequest* pRequest)
@@ -35,12 +36,43 @@ class WebServer
     {
       _pWebServer->_singleMode = _pWebServer->_singleMode == 0 ? 1 : 0;
 
-      pRequest->redirect("/");
+      if (pRequest->hasArg("r"))
+      {
+        pRequest->redirect("/Color");
+      }
+      else
+      {
+        pRequest->redirect("/");
+      }
     }
 
     static void OnMainPage(AsyncWebServerRequest* pRequest)
     {
       Serial.println("> MainPage");
+
+      String response = MainPageHtml1;
+
+      response += "<p>";
+        
+      if (_pWebServer->_singleMode)
+      {
+        response += "<b>Mode: Single Mode</b>";
+      }
+      else
+      {
+        response += "<b>Mode: Recording Mode </b>";
+      }
+      response += "&nbsp;&nbsp;<a href=\"/ToggleMode\">Toggle</a></p>";
+      response += MainPageHtml2;
+
+      pRequest->send(200, "text/html", response);
+
+      Serial.println("< MainPage");
+    }
+    
+    static void OnProvision(AsyncWebServerRequest* pRequest)
+    {
+      Serial.println("> Provision");
 
       if (pRequest->hasArg("ssid"))
       {
@@ -55,21 +87,18 @@ class WebServer
       }      
       else
       {
-        String response = MainPageHtml1;
+        String response = ProvisionPageHtml1;
 
-        Serial.println("A1");
         response += "<b>Status: </b>";
         response += _pWebServer->_pWifiHandler->GetStatus();
         response += "</br>";
         
-        Serial.println("A2");
         response += "<b>LEDs: </b>";
         response += _pWebServer->_pPixelHandler->GetPixelCount();
         response += "</br>";
         
-        response += MainPageHtml2;
+        response += ProvisionPageHtml2;
 
-        Serial.println("A3");
         Networks networks = _pWebServer->_pWifiHandler->getNetworks();
 
         for (int i = 0; i < networks.count; i += 2)
@@ -78,35 +107,39 @@ class WebServer
           response += option;
         }
 
-        response += MainPageHtml3;
-        response += MainPageHtml4;
-        Serial.println("A4");
-
-        response += "<p>";
-        
-        if (_pWebServer->_singleMode)
-        {
-          response += "<b>Mode: Single Mode</b>";
-        }
-        else
-        {
-          response += "<b>Mode: Recording Mode </b>";
-        }
-        Serial.println("A5");
-
-        response += "&nbsp;&nbsp;<a href=\"/ToggleMode\">Toggle</a></p>";
-
-        response += _pWebServer->_colorTableHtml;
-        Serial.println("A6");
-
-        response += MainPageHtml5;
-        Serial.println("A7");
+        response += ProvisionPageHtml3;
         pRequest->send(200, "text/html", response);
       }
 
-      Serial.println("< MainPage");
+      Serial.println("< Provision");
     }
 
+    static void OnColorPage(AsyncWebServerRequest* pRequest)
+    {
+      Serial.println("> ColorPage");
+
+      String response = ColorPageHtml1;
+
+      response += "<p>";
+        
+      if (_pWebServer->_singleMode)
+      {
+        response += "<b>Mode: Single Mode</b>";
+      }
+      else
+      {
+        response += "<b>Mode: Recording Mode </b>";
+      }
+
+      response += "&nbsp;&nbsp;<a href=\"/ToggleMode?r=1\">Toggle</a></p>";
+
+      response += _pWebServer->_colorTableHtml;
+
+      response += ColorPageHtml2;
+      pRequest->send(200, "text/html", response);
+
+      Serial.println("< ColorPage");
+    }
     static String GetHexDigit(int digit)
     {
       static char digitChars[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
@@ -130,7 +163,7 @@ class WebServer
     {
       String cell = "<td bgColor=\"#";
       cell += GetHexValue(red) + GetHexValue(green) + GetHexValue(blue);
-      cell += "\"><a style=\"text-decoration: none;\" href=\"/message?r=1&content=rgbx";
+      cell += "\"><a style=\"text-decoration: none;\" href=\"/message?c=1&content=rgbx";
 
       cell += GetIntValue(red);
       cell += ",";
@@ -170,7 +203,7 @@ class WebServer
       
       response += "<table>";
 
-      for (int intensity = 255; intensity > 100; intensity -= 80)
+      for (int intensity = 255; intensity > 100; intensity -= 50)
       {
         response += "<tr>";
 
@@ -184,6 +217,7 @@ class WebServer
       return response;
     }
 
+#ifdef fred
     static void OnProvision(AsyncWebServerRequest* pRequest) 
     {
       Serial.println("> Provision");
@@ -202,12 +236,21 @@ class WebServer
       pRequest->send(200, "text/plain", "Starting provisioning");    
       Serial.println("< Provision");
     }
-  
+#endif
+
     static void OnMessage(AsyncWebServerRequest* pRequest)
     {
       if (pRequest->hasArg("r"))
       {
         pRequest->redirect("/");
+      }
+      if (pRequest->hasArg("c"))
+      {
+        pRequest->redirect("/Color");
+      }      
+      else if (pRequest->hasArg("ledcount"))
+      {
+        pRequest->redirect("/Provision");
       }
       else
       {
@@ -217,6 +260,11 @@ class WebServer
       if (pRequest->hasArg("content"))
       {
         String content = pRequest->arg("content");
+
+        if (pRequest->hasArg("ledcount"))
+        {
+          content = "nx" + content; // prepend command...
+        }
 
         Serial.print("content: "); Serial.println(content);
 
@@ -247,9 +295,10 @@ class WebServer
 
       _pServer->onNotFound(OnNotFound);
       _pServer->on("/", OnMainPage);
+      _pServer->on("/Provision", OnProvision);
       _pServer->on("/ToggleMode", OnToggleMode);
+      _pServer->on("/Color", OnColorPage);
       _pServer->on("/info", OnInfo);
-      _pServer->on("/provision", OnProvision);
       _pServer->on("/message", OnMessage);
 
       _pServer->begin();

@@ -127,6 +127,12 @@ class PixelHandler
         ClearStrip();
         ESP.restart();
       }
+      else if (strstr(pMessage, "reset") == pMessage)
+      {
+        _pPersistentStorage->Reset();
+        ClearStrip();
+        ESP.restart();        
+      }
       else
       {
         _animationSegments.Add(pMessage, period);

@@ -19,10 +19,10 @@ class PersistentStorage
 
     void Save()
     {
-      _version = 1;
+      _version = 1001;
       _size = sizeof(PersistentStorage);
       
-      EEPROM.begin(512);
+      EEPROM.begin(4096);
       byte* pData = (byte*) this;
       for (int i = 0; i < _size; i++)
       {
@@ -37,7 +37,8 @@ class PersistentStorage
 
     void Load()
     {
-      EEPROM.begin(512);
+      Serial.println("Load");
+      EEPROM.begin(4096);
 
       byte* pData = (byte*) this;
       for (int i = 0; i < sizeof(PersistentStorage); i++)
@@ -58,6 +59,16 @@ class PersistentStorage
       Serial.println(_password);
       Serial.println(_storedAnimation);
       Serial.println(_ledCount);
+    }
+
+    void Reset()
+    {
+      strcpy(_hostName, "");
+      strcpy(_ssid, "");
+      strcpy(_password, "");
+      strcpy(_storedAnimation, "");
+      _ledCount = 10;
+      Save();
     }
 
     void SsidSet(String ssid)
