@@ -112,7 +112,7 @@ const char* ProvisionPageHtml3 = R"-----(
 <a href="/message?r=1&content=reset">Reset</a></p>
 
 
-<h3>Set LED count (will reboot!</h3>
+<h3>Set LED count (will reboot!)</h3>
 <form action="/message">
     <input type="hidden" name="r" value="1"/>
     <input type="hidden" name="ledcount" value="1"/>

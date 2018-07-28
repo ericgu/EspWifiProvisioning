@@ -1,6 +1,6 @@
 #include <EEPROM.h>
 
-class PersistentStorage
+class PersistentStorageV1001
 {
   public:
 
@@ -11,6 +11,20 @@ class PersistentStorage
     char _hostName[33];
     char _ledCount;
     char _storedAnimation[3956];
+};
+
+class PersistentStorage
+{
+  public:
+
+    int  _version;
+    int _size;
+    char _ssid[33];
+    char _password[65];
+    char _hostName[33];
+    short _ledCount;
+    char _reserved[512];
+    char _storedAnimation[3439];
 
     PersistentStorage()
     {
@@ -19,7 +33,7 @@ class PersistentStorage
 
     void Save()
     {
-      _version = 1001;
+      _version = 1002;
       _size = sizeof(PersistentStorage);
       
       EEPROM.begin(4096);
@@ -30,7 +44,6 @@ class PersistentStorage
         pData++;
       }
       
-      EEPROM.put(0, this);
       EEPROM.commit();
       Serial.println("Saved configuration");
     }
@@ -40,25 +53,42 @@ class PersistentStorage
       Serial.println("Load");
       EEPROM.begin(4096);
 
-      byte* pData = (byte*) this;
+      byte* pStart = (byte*) this;
+      byte* pData = pStart;
       for (int i = 0; i < sizeof(PersistentStorage); i++)
       {
         *pData = EEPROM.read(i);
         pData++;
       }      
-      EEPROM.get(0, this);    
 
-      if (_ledCount == 0)
+      if (_version < 1002)
+      {
+        PersistentStorageV1001* pOld = (PersistentStorageV1001*) this;
+
+        _version = 1002;
+        _ledCount = pOld->_ledCount;
+        strncpy(_storedAnimation, pOld->_storedAnimation, sizeof(_storedAnimation));
+        Save(); // save on upgrade...
+      }
+
+      if (_ledCount > 1000)
       {
         _ledCount = 33;
       }
 
+      if (*_storedAnimation == 255)
+      {
+        strcpy(_storedAnimation, "colx500,180");
+      }
+
       Serial.println("Loaded configuration");
+      Serial.println(_version);
+      Serial.println(_size);
       Serial.println(_hostName);
       Serial.println(_ssid);
       Serial.println(_password);
       Serial.println(_storedAnimation);
-      Serial.println(_ledCount);
+      Serial.println((int) _ledCount);
     }
 
     void Reset()
@@ -66,8 +96,8 @@ class PersistentStorage
       strcpy(_hostName, "");
       strcpy(_ssid, "");
       strcpy(_password, "");
-      strcpy(_storedAnimation, "");
-      _ledCount = 10;
+      strcpy(_storedAnimation, "colx500,180");
+      _ledCount = 33;
       Save();
     }
 
@@ -102,4 +132,5 @@ class PersistentStorage
     }
 
 };
+
 

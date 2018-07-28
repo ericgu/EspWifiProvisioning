@@ -20,7 +20,7 @@ extern "C" {
 PersistentStorage persistentStorage;
 
 const uint8_t PixelPin = 2;  // make sure to set this to the correct pin, ignored for Esp8266
-const char* Version = "1.1";
+const char* Version = "1.2";
 
 PixelHandler pixelHandler(&persistentStorage, PixelPin);
 WifiHandler wifiHandler;
@@ -34,7 +34,7 @@ WebServer webServer;
 #define NODE_TYPE_LOCAL_NET 2
 #define NODE_TYPE_AP_NET_FORGETFUL 3
 
-int nodeType = 1;
+int nodeType = 2;
 
 DNSServer dnsServer;
 
@@ -48,6 +48,7 @@ void setup() {
   {
     strcpy(persistentStorage._ssid, "junkjunkjunk");  // set bad wifi params for testing...
     strcpy(persistentStorage._storedAnimation, "invalid");  // set bad animation. 
+    persistentStorage._ledCount = 33;
     persistentStorage.Save();
   }
   persistentStorage.Load();

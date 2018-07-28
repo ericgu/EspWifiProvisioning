@@ -40,6 +40,11 @@ class AnimationColorRotate: public IAnimation
     void Update()
     {
       RgbColor color = GetColor();
+      //Serial.print(color.R);
+      //Serial.print(" ");
+      //Serial.print(color.G);
+      //Serial.print(" ");
+      //Serial.println(color.B);
 
       SetAllPixelColorWithGammaAndShow(color);
     }
