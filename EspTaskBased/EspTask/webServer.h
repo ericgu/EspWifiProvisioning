@@ -1,5 +1,6 @@
 #include <ESPAsyncWebServer.h>
 #include "MainPage.h"
+#include "ColorTable.h"
 
 class WebServer
 {
@@ -140,6 +141,8 @@ class WebServer
 
       Serial.println("< ColorPage");
     }
+
+#if fred
     static String GetHexDigit(int digit)
     {
       static char digitChars[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
@@ -216,26 +219,6 @@ class WebServer
 
       return response;
     }
-
-#ifdef fred
-    static void OnProvision(AsyncWebServerRequest* pRequest) 
-    {
-      Serial.println("> Provision");
-      if (pRequest->hasArg("ssid"))
-      {
-        String ssid = pRequest->arg("ssid");
-        String password = pRequest->arg("password");
-        bool provisionOtherNodes = !pRequest->hasArg("SkipOtherNodes");
-
-        Serial.print("  ssid: "); Serial.println(ssid);
-        Serial.print("  password: "); Serial.println(password);
-        Serial.print("  provisionOtherNodes: "); Serial.println(provisionOtherNodes);
-        _pWebServer->_pWifiHandler->setWirelessParametersAndRestart(ssid, password, provisionOtherNodes);
-      }      
-
-      pRequest->send(200, "text/plain", "Starting provisioning");    
-      Serial.println("< Provision");
-    }
 #endif
 
     static void OnMessage(AsyncWebServerRequest* pRequest)
@@ -289,7 +272,7 @@ class WebServer
     {
       _pWebServer = this;
       _singleMode = true;
-      _colorTableHtml = GetTable();
+      _colorTableHtml = ColorTable::GetTable(_pWebServer->_singleMode);
       
       _pServer = new AsyncWebServer(80);
 

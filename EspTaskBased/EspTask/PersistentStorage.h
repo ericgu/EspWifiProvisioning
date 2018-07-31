@@ -1,4 +1,4 @@
-#include <EEPROM.h>
+#include "EEPROM.h"
 
 class PersistentStorageV1001
 {
@@ -11,6 +11,22 @@ class PersistentStorageV1001
     char _hostName[33];
     char _ledCount;
     char _storedAnimation[3956];
+
+	void Save()
+	{
+		_size = sizeof(PersistentStorageV1001);
+
+		EEPROM.begin(4096);
+		byte* pData = (byte*) this;
+		for (int i = 0; i < _size; i++)
+		{
+			EEPROM.write(i, *pData);
+			pData++;
+		}
+
+		EEPROM.commit();
+		Serial.println("Saved configuration");
+	}
 };
 
 class PersistentStorage
@@ -29,11 +45,11 @@ class PersistentStorage
     PersistentStorage()
     {
       memset(this, 0, sizeof(PersistentStorage));
-    }
+	    _version = 1002;
+	  }
 
     void Save()
     {
-      _version = 1002;
       _size = sizeof(PersistentStorage);
       
       EEPROM.begin(4096);
@@ -61,13 +77,17 @@ class PersistentStorage
         pData++;
       }      
 
-      if (_version < 1002)
+      if (_version != 1002)
       {
         PersistentStorageV1001* pOld = (PersistentStorageV1001*) this;
 
+        String oldStoredAnimation = pOld->_storedAnimation;
+        int oldLedCount = pOld->_ledCount;
+        
         _version = 1002;
-        _ledCount = pOld->_ledCount;
-        strncpy(_storedAnimation, pOld->_storedAnimation, sizeof(_storedAnimation));
+        _ledCount = oldLedCount;
+		
+        strncpy(_storedAnimation, oldStoredAnimation.c_str(), sizeof(_storedAnimation));
         Save(); // save on upgrade...
       }
 
@@ -130,7 +150,6 @@ class PersistentStorage
     {
       return String(_hostName);
     }
-
 };
 
 
